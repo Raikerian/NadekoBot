@@ -23,8 +23,8 @@ namespace NadekoBot.Core.Services.Impl
         private readonly IBotCredentials _creds;
         private readonly DateTime _started;
 
-        public const string BotVersion = "2.23.0";
-        public string Author => "Kwoth#2560";
+        public const string BotVersion = "[Rem edition]";
+        public string Author => "OG: Kwoth#2560\nRem ED: Raikerian#7066";
         public string Library => "Discord.Net";
 
         public string Heap => Math.Round((double)GC.GetTotalMemory(false) / 1.MiB(), 2)
