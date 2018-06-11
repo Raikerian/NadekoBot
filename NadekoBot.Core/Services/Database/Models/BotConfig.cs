@@ -25,7 +25,7 @@ namespace NadekoBot.Core.Services.Database.Models
         public string CurrencyName { get; set; } = "Nadeko Flower";
         public string CurrencyPluralName { get; set; } = "Nadeko Flowers";
 
-        public int TriviaCurrencyReward { get; set; } = 0;
+        public int TriviaCurrencyReward { get; set; } = 100;
         /// <summary> UNUSED </summary>
         [Obsolete]
         public int MinimumBetAmount { get; set; } = 2;
