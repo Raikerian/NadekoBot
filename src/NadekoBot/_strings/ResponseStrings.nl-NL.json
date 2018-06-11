@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Er wordt gestopt na deze vraag.",
     "games_trivia_times_up": "De tijd is om! Het goede antwoord was {0}",
     "games_trivia_win": "{0} heeft het antwoord geraden en wint het spel! Het antwoord was: {1}",
+    "games_trivia_available_categories": "Beschikbare categorieën",
     "games_ttt_against_yourself": "Je kan niet tegen jezelf spelen.",
     "games_ttt_already_running": "Boter-Kaas-en-Eieren spel is al bezig in dit kanaal.",
     "games_ttt_a_draw": "Gelijkspel!",

@@ -1080,6 +1080,13 @@
       "{0}tq"
     ]
   },
+  "trivialist": {
+    "Cmd": "trivialist",
+    "Desc": "Shows all available categories for trivia.",
+    "Usage": [
+      "{0}trivialist"
+    ]
+  },
   "typestart": {
     "Cmd": "typestart",
     "Desc": "Starts a typing contest.",

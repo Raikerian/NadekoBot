@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Koniec po tym pytaniu.",
     "games_trivia_times_up": "Koniec czasu! Prawidłowa odpowiedź to {0}",
     "games_trivia_win": "{0} zgadł i wygrał grę! Odpowiedź to: {1}",
+    "games_trivia_available_categories": "Dostępne kategorie",
     "games_ttt_against_yourself": "Nie możesz grać przeciwko sobie.",
     "games_ttt_already_running": "Gra kółko i krzyżyk jest aktywna na tym serwerze.",
     "games_ttt_a_draw": "Remis!",

@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Игра се зауставља после овог питања.",
     "games_trivia_times_up": "Време је истекло! Тачан одговор је {0}",
     "games_trivia_win": "{0} је погодио и ПОБЕДИО игру! Одговор је био: {1}",
+    "games_trivia_available_categories": "Доступне категорије",
     "games_ttt_against_yourself": "Не можеш играти против себе.",
     "games_ttt_already_running": "Игра икс-окс већ постоји на овом каналу.",
     "games_ttt_a_draw": "Нерешено!",

@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Stopper efter dette spørgsmål.",
     "games_trivia_times_up": "Tiden er omme! Det rigtige svar var {0}",
     "games_trivia_win": "{0} gættede det og vandt spillet! Svaret var: {1}",
+    "games_trivia_available_categories": "Tilgængelige kategorier",
     "games_ttt_against_yourself": "Du kan ikke spille mod dig selv.",
     "games_ttt_already_running": "Der er allerede et TicTacToe spil i gang i denne kanal.",
     "games_ttt_a_draw": "Det blev uafgjort!",

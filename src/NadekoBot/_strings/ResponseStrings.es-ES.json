@@ -352,6 +352,7 @@
     "games_trivia_stopping": "La trivia se detendrá luego de esta pregunta.",
     "games_trivia_times_up": "¡Tiempo! La respuesta correcta era {0}",
     "games_trivia_win": "¡{0} adivinó y ganó el juego! La respuesta era: {1}",
+    "games_trivia_available_categories": "Categorías disponibles",
     "games_ttt_against_yourself": "No puedes jugar contra ti mismo.",
     "games_ttt_already_running": "El juego de Tres en raya ya se ha iniciado en este canal.",
     "games_ttt_a_draw": "¡Empate!",

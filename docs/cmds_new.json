@@ -2956,6 +2956,19 @@
       "Module": "Games",
       "Options": null,
       "Requirements": []
+    },
+    {
+      "Aliases": [
+        ".trivialist"
+      ],
+      "Description": "Shows all available categories for trivia.",
+      "Usage": [
+        ".trivialist"
+      ],
+      "Submodule": "TriviaCommands",
+      "Module": "Games",
+      "Options": null,
+      "Requirements": []
     }
   ],
   "Help": [

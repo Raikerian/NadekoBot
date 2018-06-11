@@ -352,6 +352,7 @@
     "games_trivia_stopping": "التوقف بعد هذا السؤال",
     "games_trivia_times_up": "انتهى الوقت ! الاجابة الصحيحة كانت {0}",
     "games_trivia_win": "{0} حزر الاجابة وفاز باللعبة ! الاجابة كانت : {1}",
+    "games_trivia_available_categories": "الفئات المتاحة",
     "games_ttt_against_yourself": "لا يمكنك اللعب ضد نفسك.",
     "games_ttt_already_running": "TicTacToe Game قيد التشغيل بالفعل في هذه القناة.",
     "games_ttt_a_draw": "تعادل !",

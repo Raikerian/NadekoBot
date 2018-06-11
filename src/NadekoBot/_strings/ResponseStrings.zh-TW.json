@@ -352,6 +352,7 @@
     "games_trivia_stopping": "於此問題後結束。",
     "games_trivia_times_up": "時間到! 正確答案為: {0}",
     "games_trivia_win": "{0} 答對並贏得遊戲! 答案是: {1}",
+    "games_trivia_available_categories": "可用的類別",
     "games_ttt_against_yourself": "你不能對自己玩。",
     "games_ttt_already_running": "圈圈叉叉遊戲已經在此頻道上運行中。",
     "games_ttt_a_draw": "平手!",

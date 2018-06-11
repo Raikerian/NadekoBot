@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Hra končí po téhle otázce.",
     "games_trivia_times_up": "Čas vypršel. Správná odpověď byla {0}",
     "games_trivia_win": "{0} to uhodl a VYHRÁL hru! Odpověď byla: {1}",
+    "games_trivia_available_categories": "Dostupné kategorie",
     "games_ttt_against_yourself": "Nemůžeš hrát sám proti sobě.",
     "games_ttt_already_running": "Hra Piškvorky již na tomto serveru probíhá.",
     "games_ttt_a_draw": "Remíza!",

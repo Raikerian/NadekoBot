@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Stoppar efter denna fråga.",
     "games_trivia_times_up": "Tiden är slut! Det korrekta svaret var {0}",
     "games_trivia_win": "{0} gissade rätt och VANN spelet! Svaret var: {1} ",
+    "games_trivia_available_categories": "Tillgängliga kategorier",
     "games_ttt_against_yourself": "Du kan inte spela mot dig själv.",
     "games_ttt_already_running": "Tre I Rad spelet pågår redan i denna kanal.",
     "games_ttt_a_draw": "Oavgjort!",

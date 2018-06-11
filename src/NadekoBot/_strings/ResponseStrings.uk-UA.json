@@ -369,6 +369,7 @@
   "games_trivia_stopping": "Зупинився після цього питання.",
   "games_trivia_times_up": "Час минув! Правильну відповідь була {0}",
   "games_trivia_win": "{0} здогадався і ВИГРАВ гру! Відповідь була: {1}",
+  "games_trivia_available_categories": "Доступні категорії",
   "games_ttt_against_yourself": "Ви не можете грати проти себе.",
   "games_ttt_already_running": "Гра TicTacToe вже запущена на цьому каналі.",
   "games_ttt_a_draw": "Нічия!",

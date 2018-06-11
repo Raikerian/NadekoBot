@@ -352,6 +352,7 @@
     "games_trivia_stopping": "この質問のあと終了します。",
     "games_trivia_times_up": "時間切れです。正解は {0} でした。",
     "games_trivia_win": "{0}のお答えのとおり！ そしてあなたの勝ちです！！  正解は {1} でした。",
+    "games_trivia_available_categories": "利用可能なカテゴリ",
     "games_ttt_against_yourself": "ひとりではゲームできません。",
     "games_ttt_already_running": "三目並べは既にこのサーバーで行われています。",
     "games_ttt_a_draw": "引き分け！",

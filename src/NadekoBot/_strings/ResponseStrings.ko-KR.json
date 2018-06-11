@@ -352,6 +352,7 @@
     "games_trivia_stopping": "이 질문 후에 중지합니다.",
     "games_trivia_times_up": "시간초과! 정확한 답은 {0} 입니다.",
     "games_trivia_win": "{0}님이 맞춰서 게임을 이겼습니다! 답은 {1} 입니다.",
+    "games_trivia_available_categories": "사용 가능한 카테고리",
     "games_ttt_against_yourself": "당신을 상대로 플레이 할 수 없습니다.",
     "games_ttt_already_running": "이미 이 채널에서 TicTacToe 게임이 진행중입니다.",
     "games_ttt_a_draw": "비겼습니다!",

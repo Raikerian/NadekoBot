@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Bu sorunun ardından bitiriyorum.",
     "games_trivia_times_up": "Süre doldu! Doğru cevap {0} idi",
     "games_trivia_win": "{0} tahmin etti ve oyunu kazandı! Cevap şuydu: {1}",
+    "games_trivia_available_categories": "Mevcut kategoriler",
     "games_ttt_against_yourself": "Kendinize karşı oynayamazsınız.",
     "games_ttt_already_running": "TicTacToe Oyunu zaten bu kanalda çalışıyor.",
     "games_ttt_a_draw": "Bir çizim!",

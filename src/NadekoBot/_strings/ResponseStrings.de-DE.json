@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Wird beendet nach dieser Frage.",
     "games_trivia_times_up": "Die Zeit ist um! Die richtige Antwort war {0}",
     "games_trivia_win": "{0} erriet es und hat das Spiel GEWONNEN! Die Antwort war: {1}",
+    "games_trivia_available_categories": "Verfügbare kategorien",
     "games_ttt_against_yourself": "Sie können nicht gegen sich selber spielen.",
     "games_ttt_already_running": "Ein TicTacToe Spiel läuft schon in diesem Kanal.",
     "games_ttt_a_draw": "Unentschieden!",

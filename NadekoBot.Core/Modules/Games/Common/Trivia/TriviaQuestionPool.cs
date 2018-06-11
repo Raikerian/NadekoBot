@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using NadekoBot.Common;
 using NadekoBot.Extensions;
 using NadekoBot.Core.Services;
@@ -10,16 +11,26 @@ namespace NadekoBot.Modules.Games.Common.Trivia
     {
         private readonly IDataCache _cache;
         private readonly int maxPokemonId;
+        private readonly TriviaQuestion[] Pool;
 
         private readonly NadekoRandom _rng = new NadekoRandom();
 
-        private TriviaQuestion[] Pool => _cache.LocalData.TriviaQuestions;
         private IReadOnlyDictionary<int, string> Map => _cache.LocalData.PokemonMap;
 
-        public TriviaQuestionPool(IDataCache cache)
+        public TriviaQuestionPool(IDataCache cache,  string category = null)
         {
             _cache = cache;
             maxPokemonId = 721; //xd
+
+            var triviaQuestions = cache.LocalData.TriviaQuestions;
+            if (string.IsNullOrEmpty(category))
+            {
+                Pool = triviaQuestions;
+            }
+            else
+            {
+                Pool = Array.FindAll(triviaQuestions, q => q.Category.ToLower().Equals(category.ToLower()));
+            }
         }
 
         public TriviaQuestion GetRandomQuestion(HashSet<TriviaQuestion> exclude, bool isPokemon)
@@ -36,10 +47,18 @@ namespace NadekoBot.Modules.Games.Common.Trivia
                     $@"http://nadekobot.me/images/pokemon/shadows/{num}.png",
                     $@"http://nadekobot.me/images/pokemon/real/{num}.png");
             }
+
             TriviaQuestion randomQuestion;
             while (exclude.Contains(randomQuestion = Pool[_rng.Next(0, Pool.Length)])) ;
 
             return randomQuestion;
+        }
+
+        public string[] GetSortedCategoryList()
+        {
+            string[] categories = Pool.Select(q => q.Category).ToArray().Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            Array.Sort(categories, StringComparer.InvariantCulture);
+            return categories;
         }
     }
 }

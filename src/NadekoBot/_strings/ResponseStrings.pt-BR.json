@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Parando após esta questão.",
     "games_trivia_times_up": "Tempo esgotado! A resposta correta era {0}",
     "games_trivia_win": "{0} adivinhou e VENCEU o jogo! A resposta era: {1}",
+    "games_trivia_available_categories": "Categorias disponíveis",
     "games_ttt_against_yourself": "Você não pode jogar contra si mesmo.",
     "games_ttt_already_running": "Um Jogo da Velha já está em andamento neste canal.",
     "games_ttt_a_draw": "Um empate!",

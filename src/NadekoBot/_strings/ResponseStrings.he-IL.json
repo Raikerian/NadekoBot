@@ -352,6 +352,7 @@
     "games_trivia_stopping": "עוצר אחרי השאלה הזאת.",
     "games_trivia_times_up": "הזמן עבר! התשובה הנכונה הייתה {0}",
     "games_trivia_win": "{0} ניחש את זה וניצח במשחק! התשובה הייתה: {1}",
+    "games_trivia_available_categories": "קטגוריות זמינות",
     "games_ttt_against_yourself": "אתה לא יכול לשחק נגד עצמך.",
     "games_ttt_already_running": "משחק איקס ועיגולים כבר פעיל על הערוץ הזה.",
     "games_ttt_a_draw": "תיקו!",

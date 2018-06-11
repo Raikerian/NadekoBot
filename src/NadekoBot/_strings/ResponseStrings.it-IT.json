@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Il gioco terminerà dopo questa domanda.",
     "games_trivia_times_up": "Tempo scaduto! La risposta corretta era {0}",
     "games_trivia_win": "{0} ha indovinato ed è il VINCITORE! La risposta era: {1}",
+    "games_trivia_available_categories": "Categorie disponibili",
     "games_ttt_against_yourself": "Non puoi giocare contro te stesso.",
     "games_ttt_already_running": "Una partita di Tris è già in corso in questo canale.",
     "games_ttt_a_draw": "Pareggio!",

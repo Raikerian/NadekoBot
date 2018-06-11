@@ -358,6 +358,7 @@
     "games_trivia_stopping": "Befejezés ezután a kérdés után.",
     "games_trivia_times_up": "Lejárt az idő! A helyes válasz {0} volt.",
     "games_trivia_win": "{0} kitalálta és MEGNYERTE a játékot! A válasz {0} volt.",
+    "games_trivia_available_categories": "Elérhető kategóriák",
     "games_ttt_against_yourself": "Nem játszhatsz saját magad ellen.",
     "games_ttt_already_running": "Már játszanak a szobában amőbát.",
     "games_ttt_a_draw": "Döntetlen!",

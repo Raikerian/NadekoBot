@@ -49,7 +49,7 @@ namespace NadekoBot.Modules.Games.Common.Trivia
         {
             _log = LogManager.GetCurrentClassLogger();
             _cache = cache;
-            _questionPool = new TriviaQuestionPool(_cache);
+            _questionPool = new TriviaQuestionPool(_cache, options.Category);
             _strings = strings;
             _client = client;
             _bc = bc;

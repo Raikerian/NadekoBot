@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Ne oprim după această întrebare.",
     "games_trivia_times_up": "Timpul s-a scurs! Răspunsul corect era {0}",
     "games_trivia_win": "{0} a ghicit si a CÂSTIGAT jocul! Răspunsul era: {1}",
+    "games_trivia_available_categories": "Categorii disponibile",
     "games_ttt_against_yourself": "Nu poți juca împotriva ta.",
     "games_ttt_already_running": "X și 0 este deja pornit pe acest canal.",
     "games_ttt_a_draw": "Egalitate!",

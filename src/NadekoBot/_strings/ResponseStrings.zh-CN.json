@@ -352,6 +352,7 @@
     "games_trivia_stopping": "这个问题后停止。",
     "games_trivia_times_up": "时间到！ 正确的答案是{0}",
     "games_trivia_win": "{0}猜到了，赢得了游戏！ 答案是：{1}",
+    "games_trivia_available_categories": "可用的类别",
     "games_ttt_against_yourself": "你不能对自己玩。",
     "games_ttt_already_running": "TicTacToe游戏已在此频道中运行。",
     "games_ttt_a_draw": "平局！",

@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Игра закончится после этого вопроса.",
     "games_trivia_times_up": "Время вышло! Правильный ответ — {0}",
     "games_trivia_win": "{0} угадал и ВЫИГРАЛ в игре! Ответ: {1}",
+    "games_trivia_available_categories": "Доступные категории",
     "games_ttt_against_yourself": "Вы не можете играть против самого себя.",
     "games_ttt_already_running": "В этом канале уже идёт игра в крестики-нолики.",
     "games_ttt_a_draw": "Ничья!",

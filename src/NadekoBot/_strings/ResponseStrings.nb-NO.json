@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Stopper etter dette spørsmålet",
     "games_trivia_times_up": "Tiden er ute! Det riktige svaret var {0}",
     "games_trivia_win": "{0} gjettet det og VANT spillet! Svaret var: {1}",
+    "games_trivia_available_categories": "Tilgjengelige kategorier",
     "games_ttt_against_yourself": "Du kan ikke spille mot deg selv.",
     "games_ttt_already_running": "Bondesjakk kjører allerede i denne kanalen.",
     "games_ttt_a_draw": "Uavgjort!",

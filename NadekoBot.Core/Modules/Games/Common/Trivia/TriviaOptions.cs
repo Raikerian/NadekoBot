@@ -5,6 +5,8 @@ namespace NadekoBot.Core.Modules.Games.Common.Trivia
 {
     public class TriviaOptions : INadekoCommandOptions
     {
+        [Option('c', "category", Required = false, Default = null, HelpText = "Trivia with the specific category. Use \" \" for the category name.")]
+        public string Category { get; set; } = null;
         [Option('p', "pokemon", Required = false, Default = false, HelpText = "Whether it's 'Who's that pokemon?' trivia.")]
         public bool IsPokemon { get; set; } = false;
         [Option("nohint", Required = false, Default = false, HelpText = "Don't show any hints.")]

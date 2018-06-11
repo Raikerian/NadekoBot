@@ -352,6 +352,7 @@
     "games_trivia_stopping": "Berhenti setelah pertanyaan ini.",
     "games_trivia_times_up": "Waktu habis! Jawaban yang benar adalah {0}",
     "games_trivia_win": "{0} berhasil menebaknya dan memenangkan permainan! Jawabannya adalah: {1}",
+    "games_trivia_available_categories": "Kategori yang tersedia",
     "games_ttt_against_yourself": "Anda tidak bisa bermain melawan diri sendiri.",
     "games_ttt_already_running": "Permainan TicTacToe sedang berlangsung di channel ini.",
     "games_ttt_a_draw": "Sebuah seri!",

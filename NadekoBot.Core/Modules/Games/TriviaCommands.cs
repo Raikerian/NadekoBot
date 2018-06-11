@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using NadekoBot.Extensions;
 using NadekoBot.Core.Services;
+using System.Linq;
 using System.Threading.Tasks;
 using NadekoBot.Common.Attributes;
 using NadekoBot.Modules.Games.Common.Trivia;
@@ -20,6 +21,8 @@ namespace NadekoBot.Modules.Games
             private readonly IDataCache _cache;
             private readonly ICurrencyService _cs;
             private readonly DiscordSocketClient _client;
+
+            private string[] categories;
 
             public TriviaCommands(DiscordSocketClient client, IDataCache cache, ICurrencyService cs)
             {
@@ -92,6 +95,38 @@ namespace NadekoBot.Modules.Games
                 }
 
                 await ReplyErrorLocalized("trivia_none").ConfigureAwait(false);
+            }
+
+            [NadekoCommand, Usage, Description, Aliases]
+            [RequireContext(ContextType.Guild)]
+            public async Task TriviaList(int page = 1)
+            {
+                // hardcoded max page
+                if (--page < 0 || page > 100)
+                    return;
+
+                if (categories == null)
+                {
+                    // lazy load availablle categories for pagination
+                    TriviaQuestionPool tPool = new TriviaQuestionPool(_cache);
+                    categories = tPool.GetSortedCategoryList();
+                }
+
+                if (categories.Length == 0)
+                {
+                    var channel = (ITextChannel)Context.Channel;
+                    await channel.SendConfirmAsync(GetText("trivia_available_categories"), "-").ConfigureAwait(false);
+                    return;
+                }
+
+                var categoriesPerPage = 20;
+
+                await Context.SendPaginatedConfirmAsync(page,
+                    (curPage) => new EmbedBuilder()
+                        .WithOkColor()
+                        .WithTitle(GetText("trivia_available_categories"))
+                        .WithDescription(string.Join("\n", categories.Skip(curPage * categoriesPerPage).Take(categoriesPerPage))),
+                    categories.Length, categoriesPerPage);
             }
         }
     }
