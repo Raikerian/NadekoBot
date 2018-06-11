@@ -40,9 +40,9 @@ namespace NadekoBot.Core.Services.Impl
         private long _commandsRan;
         public long CommandsRan => Interlocked.Read(ref _commandsRan);
 
-        private readonly Timer _carbonitexTimer;
-        private readonly Timer _botlistTimer;
-        private readonly Timer _dataTimer;
+        // private readonly Timer _carbonitexTimer;
+        // private readonly Timer _botlistTimer;
+        // private readonly Timer _dataTimer;
         private readonly ConnectionMultiplexer _redis;
 
         public StatsService(DiscordSocketClient client, CommandHandler cmdHandler,
@@ -133,98 +133,98 @@ namespace NadekoBot.Core.Services.Impl
                 return Task.CompletedTask;
             };
 
-            if (_client.ShardId == 0)
-            {
-                _carbonitexTimer = new Timer(async (state) =>
-                {
-                    if (string.IsNullOrWhiteSpace(_creds.CarbonKey))
-                        return;
-                    try
-                    {
-                        using (var http = new HttpClient())
-                        {
-                            using (var content = new FormUrlEncodedContent(
-                                new Dictionary<string, string> {
-                                { "servercount", nadeko.GuildCount.ToString() },
-                                { "key", _creds.CarbonKey }}))
-                            {
-                                content.Headers.Clear();
-                                content.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
-
-                                await http.PostAsync("https://www.carbonitex.net/discord/data/botdata.php", content).ConfigureAwait(false);
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
-                }, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
-            }
-
-            _botlistTimer = new Timer(async (state) =>
-            {
-                if (string.IsNullOrWhiteSpace(_creds.BotListToken))
-                    return;
-                try
-                {
-                    using (var http = new HttpClient())
-                    {
-                        using (var content = new FormUrlEncodedContent(
-                            new Dictionary<string, string> {
-                                    { "shard_count",  _creds.TotalShards.ToString()},
-                                    { "shard_id", client.ShardId.ToString() },
-                                    { "server_count", client.Guilds.Count().ToString() }
-                            }))
-                        {
-                            content.Headers.Clear();
-                            content.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
-                            http.DefaultRequestHeaders.Add("Authorization", _creds.BotListToken);
-
-                            await http.PostAsync($"https://discordbots.org/api/bots/{client.CurrentUser.Id}/stats", content).ConfigureAwait(false);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex);
-                    // ignored
-                }
-            }, null, TimeSpan.FromMinutes(5), TimeSpan.FromHours(1));
-
-            var platform = "other";
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                platform = "linux";
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                platform = "osx";
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                platform = "windows";
-
-            _dataTimer = new Timer(async (state) =>
-            {
-                try
-                {
-                    using (var http = new HttpClient())
-                    {
-                        using (var content = new FormUrlEncodedContent(
-                            new Dictionary<string, string> {
-                                    { "id", string.Concat(MD5.Create().ComputeHash(Encoding.ASCII.GetBytes(_creds.ClientId.ToString())).Select(x => x.ToString("X2"))) },
-                                    { "guildCount", nadeko.GuildCount.ToString() },
-                                    { "version", BotVersion },
-                                    { "platform", platform }}))
-                        {
-                            content.Headers.Clear();
-                            content.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
-
-                            await http.PostAsync("https://selfstats.nadekobot.me/", content).ConfigureAwait(false);
-                        }
-                    }
-                }
-                catch
-                {
-                    // ignored
-                }
-            }, null, TimeSpan.FromSeconds(1), TimeSpan.FromHours(1));
+            // if (_client.ShardId == 0)
+        //     {
+        //         _carbonitexTimer = new Timer(async (state) =>
+        //         {
+        //             if (string.IsNullOrWhiteSpace(_creds.CarbonKey))
+        //                 return;
+        //             try
+        //             {
+        //                 using (var http = new HttpClient())
+        //                 {
+        //                     using (var content = new FormUrlEncodedContent(
+        //                         new Dictionary<string, string> {
+        //                         { "servercount", nadeko.GuildCount.ToString() },
+        //                         { "key", _creds.CarbonKey }}))
+        //                     {
+        //                         content.Headers.Clear();
+        //                         content.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
+        //
+        //                         await http.PostAsync("https://www.carbonitex.net/discord/data/botdata.php", content).ConfigureAwait(false);
+        //                     }
+        //                 }
+        //             }
+        //             catch
+        //             {
+        //                 // ignored
+        //             }
+        //         }, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
+        //     }
+        //
+        //     _botlistTimer = new Timer(async (state) =>
+        //     {
+        //         if (string.IsNullOrWhiteSpace(_creds.BotListToken))
+        //             return;
+        //         try
+        //         {
+        //             using (var http = new HttpClient())
+        //             {
+        //                 using (var content = new FormUrlEncodedContent(
+        //                     new Dictionary<string, string> {
+        //                             { "shard_count",  _creds.TotalShards.ToString()},
+        //                             { "shard_id", client.ShardId.ToString() },
+        //                             { "server_count", client.Guilds.Count().ToString() }
+        //                     }))
+        //                 {
+        //                     content.Headers.Clear();
+        //                     content.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
+        //                     http.DefaultRequestHeaders.Add("Authorization", _creds.BotListToken);
+        //
+        //                     await http.PostAsync($"https://discordbots.org/api/bots/{client.CurrentUser.Id}/stats", content).ConfigureAwait(false);
+        //                 }
+        //             }
+        //         }
+        //         catch (Exception ex)
+        //         {
+        //             _log.Error(ex);
+        //             // ignored
+        //         }
+        //     }, null, TimeSpan.FromMinutes(5), TimeSpan.FromHours(1));
+        //
+        //     var platform = "other";
+        //     if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        //         platform = "linux";
+        //     else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        //         platform = "osx";
+        //     else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        //         platform = "windows";
+        //
+        //     _dataTimer = new Timer(async (state) =>
+        //     {
+        //         try
+        //         {
+        //             using (var http = new HttpClient())
+        //             {
+        //                 using (var content = new FormUrlEncodedContent(
+        //                     new Dictionary<string, string> {
+        //                             { "id", string.Concat(MD5.Create().ComputeHash(Encoding.ASCII.GetBytes(_creds.ClientId.ToString())).Select(x => x.ToString("X2"))) },
+        //                             { "guildCount", nadeko.GuildCount.ToString() },
+        //                             { "version", BotVersion },
+        //                             { "platform", platform }}))
+        //                 {
+        //                     content.Headers.Clear();
+        //                     content.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
+        //
+        //                     await http.PostAsync("https://selfstats.nadekobot.me/", content).ConfigureAwait(false);
+        //                 }
+        //             }
+        //         }
+        //         catch
+        //         {
+        //             // ignored
+        //         }
+        //     }, null, TimeSpan.FromSeconds(1), TimeSpan.FromHours(1));
         }
 
         public void Initialize()
