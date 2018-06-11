@@ -37,6 +37,9 @@ namespace NadekoBot.Modules.Games.Common.Trivia
         {
             if (Pool.Length == 0)
                 return null;
+            if (Pool.Length == exclude.Count)
+                // when all questions are finished
+                return null;
 
             if (isPokemon)
             {
