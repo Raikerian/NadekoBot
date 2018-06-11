@@ -40,7 +40,7 @@ namespace NadekoBot.Modules.Help.Services
                     if (CREmbed.TryParse(_bc.BotConfig.DMHelpString, out var embed))
                         return msg.Channel.EmbedAsync(embed.ToEmbed(), embed.PlainText?.SanitizeMentions() ?? "");
 
-                    return msg.Channel.SendMessageAsync(_bc.BotConfig.DMHelpString);
+                    return msg.Channel.SendMessageAsync(String.Format(_bc.BotConfig.DMHelpString, _ch.DefaultPrefix));
                 }
             }
             catch (Exception ex)

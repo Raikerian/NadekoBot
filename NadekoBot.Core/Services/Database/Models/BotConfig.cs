@@ -49,7 +49,7 @@ namespace NadekoBot.Core.Services.Database.Models
         public HashSet<EightBallResponse> EightBallResponses { get; set; } = new HashSet<EightBallResponse>();
         public HashSet<RaceAnimal> RaceAnimals { get; set; } = new HashSet<RaceAnimal>();
 
-        public string DMHelpString { get; set; } = "Type `.h` for help.";
+        public string DMHelpString { get; set; } = "Type `{0}h` for help.";
         public string HelpString { get; set; } = @"To add me to your server, use this link -> <https://discordapp.com/oauth2/authorize?client_id={0}&scope=bot&permissions=66186303>
 You can use `{1}modules` command to see a list of all modules.
 You can use `{1}commands ModuleName` to see a list of all of the commands in that module.
