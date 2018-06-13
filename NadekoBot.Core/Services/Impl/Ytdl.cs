@@ -14,14 +14,21 @@ namespace NadekoBot.Core.Services.Impl
             _log = LogManager.GetCurrentClassLogger();
         }
 
-        public async Task<string> GetDataAsync(string url)
+        public async Task<string> GetDataAsync(string url, bool tryForBestAudio)
         {
+            var arguments = $"-4 --geo-bypass";
+            if (tryForBestAudio)
+            {
+                arguments += $" -f bestaudio";
+            }
+            arguments += $" -e --get-url --get-id --get-thumbnail --get-duration --no-check-certificate --default-search \"ytsearch:\" \"{url}\"";
+
             using (Process process = new Process()
             {
                 StartInfo = new ProcessStartInfo()
                 {
                     FileName = "youtube-dl",
-                    Arguments = $"-4 --geo-bypass -f bestaudio -e --get-url --get-id --get-thumbnail --get-duration --no-check-certificate --default-search \"ytsearch:\" \"{url}\"",
+                    Arguments = arguments,
                     UseShellExecute = false,
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,

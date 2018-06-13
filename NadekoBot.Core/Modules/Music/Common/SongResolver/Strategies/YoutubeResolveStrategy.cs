@@ -20,13 +20,13 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
 
         public async Task<SongInfo> ResolveSong(string query)
         {
-            try
-            {
-                SongInfo s = await ResolveWithYtExplode(query);
-                if (s != null)
-                    return s;
-            }
-            catch { }
+            // try
+            // {
+            //     SongInfo s = await ResolveWithYtExplode(query);
+            //     if (s != null)
+            //         return s;
+            // }
+            // catch { }
             return await ResolveWithYtDl(query);
         }
 
@@ -83,9 +83,18 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
             string[] data;
             try
             {
+                bool tryForBestAudio = true;
                 using (var ytdl = new YtdlOperation())
                 {
-                    data = (await ytdl.GetDataAsync(query)).Split('\n');
+                    data = (await ytdl.GetDataAsync(query, tryForBestAudio)).Split('\n');
+                    if (data.Length < 6)
+                    {
+                        // try without best audio flag as it might be youtube stream
+                        // which does not have bestaudio stream
+                        _log.Info("Trying to request stream without bestaudio flag.");
+                        tryForBestAudio = false;
+                        data = (await ytdl.GetDataAsync(query, tryForBestAudio)).Split('\n');
+                    }
                 }
 
                 if (data.Length < 6)
@@ -95,7 +104,9 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
                 }
 
                 if (!TimeSpan.TryParseExact(data[4], new[] { "ss", "m\\:ss", "mm\\:ss", "h\\:mm\\:ss", "hh\\:mm\\:ss", "hhh\\:mm\\:ss" }, CultureInfo.InvariantCulture, out var time))
-                    time = TimeSpan.FromHours(24);
+                {
+                    time = TimeSpan.MaxValue;
+                }
 
                 return new SongInfo()
                 {
@@ -105,7 +116,7 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
                     {
                         using (var ytdl = new YtdlOperation())
                         {
-                            data = (await ytdl.GetDataAsync(query)).Split('\n');
+                            data = (await ytdl.GetDataAsync(query, tryForBestAudio)).Split('\n');
                         }
                         if (data.Length < 6)
                         {
@@ -126,7 +137,6 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
                 _log.Warn(ex);
                 return null;
             }
-
         }
     }
 }
