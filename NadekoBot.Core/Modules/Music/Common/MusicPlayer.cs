@@ -23,6 +23,9 @@ namespace NadekoBot.Modules.Music.Common
     }
     public class MusicPlayer
     {
+        private const Int32 DELAY_VALUE = 1000;
+        private const Int32 MAX_BUFFERING_DELAY = 10000;
+
         private readonly Thread _player;
         public IVoiceChannel VoiceChannel { get; private set; }
 
@@ -208,7 +211,15 @@ namespace NadekoBot.Modules.Music.Common
                             continue;
                         }
                         b.StartBuffering();
-                        await Task.Delay(1000);
+                        await Task.Delay(DELAY_VALUE);
+                        Int32 totalDelayMs = 0;
+                        do
+                        {
+                            _log.Warn("Buffering is taking too long. Waiting " + ((MAX_BUFFERING_DELAY - totalDelayMs)/1000) + " more seconds...");
+                            await Task.Delay(DELAY_VALUE);
+                            totalDelayMs += DELAY_VALUE;
+                        }
+                        while (b.Read(3840).Length == 0 && totalDelayMs < MAX_BUFFERING_DELAY);
                         pcm = ac.CreatePCMStream(AudioApplication.Music, bufferMillis: 1);
                         _log.Info("Created pcm stream");
                         OnStarted?.Invoke(this, data);
