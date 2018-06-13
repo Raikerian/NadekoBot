@@ -25,6 +25,7 @@ namespace NadekoBot.Core.Services.Impl
         public string OsuApiKey { get; }
         public string CleverbotApiKey { get; }
         public string TenorApiKey { get; }
+        public string SoundCloudClientId { get; }
         public RestartConfig RestartCommand { get; }
         public DBConfig Db { get; }
         public int TotalShards { get; }
@@ -79,6 +80,7 @@ namespace NadekoBot.Core.Services.Impl
                 ShardRunArguments = data[nameof(ShardRunArguments)];
                 CleverbotApiKey = data[nameof(CleverbotApiKey)];
                 TenorApiKey = data[nameof(TenorApiKey)];
+                SoundCloudClientId = data[nameof(SoundCloudClientId)];
                 MiningProxyUrl = data[nameof(MiningProxyUrl)];
                 MiningProxyCreds = data[nameof(MiningProxyCreds)];
 

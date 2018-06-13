@@ -24,6 +24,7 @@ namespace NadekoBot.Core.Services.Impl
 
             using (var http = new HttpClient())
             {
+                // http://api.soundcloud.com/resolve.json?url=/tracks&client_id=
                 response = await http.GetStringAsync($"https://scapi.nadekobot.me/resolve?url={url}").ConfigureAwait(false);
             }
                 
@@ -46,6 +47,7 @@ namespace NadekoBot.Core.Services.Impl
             var response = "";
             using (var http = new HttpClient())
             {
+                // http://api.soundcloud.com/tracks?q=&client_id=
                 response = await http.GetStringAsync($"https://scapi.nadekobot.me/tracks?q={Uri.EscapeDataString(query)}").ConfigureAwait(false);
             }
 
@@ -74,7 +76,8 @@ namespace NadekoBot.Core.Services.Impl
         {
             using (var http = new HttpClient())
             {
-                return await http.GetStringAsync($"http://scapi.nadekobot.me/stream/{Id}");
+                // https://api.soundcloud.com/tracks/{Id}/stream?client_id=
+                return await http.GetStringAsync($"https://scapi.nadekobot.me/stream/{Id}");
             }
         }
     }

@@ -25,6 +25,7 @@ namespace NadekoBot.Core.Services
         string PatreonCampaignId { get; }
         string CleverbotApiKey { get; }
         string TenorApiKey { get; }
+        string SoundCloudClientId { get; }
         RestartConfig RestartCommand { get; }
         string MiningProxyUrl { get; }
         string MiningProxyCreds { get; }
