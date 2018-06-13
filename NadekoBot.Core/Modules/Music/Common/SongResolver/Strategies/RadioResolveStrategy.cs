@@ -44,7 +44,8 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
             (query.Contains(".pls") ||
             query.Contains(".m3u") ||
             query.Contains(".asx") ||
-            query.Contains(".xspf"));
+            query.Contains(".xspf") ||
+            query.Contains(".m3u8"));
 
         private async Task<string> HandleStreamContainers(string query)
         {
