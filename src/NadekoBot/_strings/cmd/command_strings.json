@@ -3380,6 +3380,46 @@
       "{0}bible genesis 3:19"
     ]
   },
+  "hug": {
+    "cmd": "hug",
+    "desc": "Hug someone or... yourself :)",
+    "usage": [
+      "{0}hug",
+      "{0}hug @Someone"
+    ]
+  },
+  "slap": {
+    "cmd": "slap",
+    "desc": "Slap someone with raw power.",
+    "usage": [
+      "{0}slap",
+      "{0}slap @Someone"
+    ]
+  },
+  "confused": {
+    "cmd": "confused",
+    "desc": "Express your confusion to someone.",
+    "usage": [
+      "{0}confused",
+      "{0}confused @Someone"
+    ]
+  },
+  "thinking": {
+    "cmd": "thinking",
+    "desc": ":thinking:",
+    "usage": [
+      "{0}thinking",
+      "{0}thinking @Someone"
+    ]
+  },
+  "gif": {
+    "cmd": "gif",
+    "desc": "Get a random gif for your query from Tenor.",
+    "usage": [
+      "{0}gif monogatari",
+      "{0}gif Big Ben"
+    ]
+  },
   "edit": {
     "cmd": "edit",
     "desc": "Edits bot's message, you have to specify message ID and new text. Supports embeds.",

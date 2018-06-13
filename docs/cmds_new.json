@@ -4814,6 +4814,76 @@
     },
     {
       "Aliases": [
+        ".hug"
+      ],
+      "Description": "Hug someone or... yourself :)",
+      "Usage": [
+        ".hug",
+        ".hug @Rem"
+      ],
+      "Submodule": "Searches",
+      "Module": "Searches",
+      "Options": null,
+      "Requirements": []
+    },
+    {
+      "Aliases": [
+        ".slap"
+      ],
+      "Description": "Slap someone with raw power.",
+      "Usage": [
+        ".slap",
+        ".slap @Someone"
+      ],
+      "Submodule": "Searches",
+      "Module": "Searches",
+      "Options": null,
+      "Requirements": []
+    },
+    {
+      "Aliases": [
+        ".confused"
+      ],
+      "Description": "Express your confusion to someone.",
+      "Usage": [
+        ".confused",
+        ".confused @Someone"
+      ],
+      "Submodule": "Searches",
+      "Module": "Searches",
+      "Options": null,
+      "Requirements": []
+    },
+    {
+      "Aliases": [
+        ".thinking"
+      ],
+      "Description": ":thinking:",
+      "Usage": [
+        ".thinking",
+        ".thinking @Someone"
+      ],
+      "Submodule": "Searches",
+      "Module": "Searches",
+      "Options": null,
+      "Requirements": []
+    },
+    {
+      "Aliases": [
+        ".gif"
+      ],
+      "Description": "Get a random gif for your query from Tenor.",
+      "Usage": [
+        ".gif monogatari",
+        ".gif Big Ben"
+      ],
+      "Submodule": "Searches",
+      "Module": "Searches",
+      "Options": null,
+      "Requirements": []
+    },
+    {
+      "Aliases": [
         ".novel"
       ],
       "Description": "Searches for a novel on `http://novelupdates.com/`. You have to provide an exact name.",

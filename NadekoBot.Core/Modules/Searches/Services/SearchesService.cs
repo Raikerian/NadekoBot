@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using NadekoBot.Common;
 using NadekoBot.Extensions;
 using NadekoBot.Core.Services;
 using Newtonsoft.Json;
@@ -37,12 +38,15 @@ namespace NadekoBot.Modules.Searches.Services
         private readonly IImageCache _imgs;
         private readonly IDataCache _cache;
         private readonly FontProvider _fonts;
+        private readonly NadekoRandom _rng;
 
         public ConcurrentDictionary<ulong, bool> TranslatedChannels { get; } = new ConcurrentDictionary<ulong, bool>();
         public ConcurrentDictionary<UserChannelPair, string> UserLanguages { get; } = new ConcurrentDictionary<UserChannelPair, string>();
 
         public List<WoWJoke> WowJokes { get; } = new List<WoWJoke>();
         public List<MagicItem> MagicItems { get; } = new List<MagicItem>();
+
+        private string TenorAnonId;
 
         private readonly ConcurrentDictionary<ulong, SearchImageCacher> _imageCacher = new ConcurrentDictionary<ulong, SearchImageCacher>();
 
@@ -91,6 +95,7 @@ namespace NadekoBot.Modules.Searches.Services
             _imgs = cache.LocalImages;
             _cache = cache;
             _fonts = fonts;
+            _rng = new NadekoRandom();
 
             _blacklistedTags = new ConcurrentDictionary<ulong, HashSet<string>>(
                 bot.AllGuildConfigs.ToDictionary(
@@ -302,6 +307,29 @@ namespace NadekoBot.Modules.Searches.Services
         {
             var response = await Http.GetStringAsync("http://api.icndb.com/jokes/random/").ConfigureAwait(false);
             return JObject.Parse(response)["value"]["joke"].ToString() + " 😆";
+        }
+
+        public async Task<string> GetRandomGif(string tenorApiKey, string query, bool safeSearch)
+        {
+            if (string.IsNullOrWhiteSpace(TenorAnonId)) {
+                // get anon id for the session first
+                var anonIdResponse = await Http.GetStringAsync("https://api.tenor.com/v1/anonid?key="+tenorApiKey).ConfigureAwait(false);
+                TenorAnonId = JObject.Parse(anonIdResponse)["anon_id"].ToString();
+            }
+
+            string httpQuery = "https://api.tenor.com/v1/search?q="+query+"&key="+tenorApiKey+"&locale=en_US&anon_id="+TenorAnonId;
+            if (safeSearch)
+            {
+                httpQuery += "&safesearch=moderate";
+            }
+            // 50 is max limit you can set on tenor
+            // tenor is sorting by popularity in 30 days
+            // so going outside of this limit is not reasonable
+            httpQuery += "&limit=50";
+            var response = await Http.GetStringAsync(httpQuery).ConfigureAwait(false);
+            var results = JObject.Parse(response)["results"];
+            // getting medium gif with is lower resolution than raw, but not as low to still be wide
+            return results[_rng.Next(results.Count())]["media"][0]["mediumgif"]["url"].ToString();
         }
 
         public Task Unload()

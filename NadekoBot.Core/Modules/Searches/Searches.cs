@@ -905,6 +905,49 @@ namespace NadekoBot.Modules.Searches
                     .WithDescription(v.Text));
             }
         }
+
+        [NadekoCommand, Usage, Description, Aliases]
+        public Task Hug(string user_mention = null)
+            => InternalGifCommand(Context.Message, user_mention, "anime hug");
+
+        [NadekoCommand, Usage, Description, Aliases]
+        public Task Slap(string user_mention = null)
+            => InternalGifCommand(Context.Message, user_mention, "anime slap");
+
+        [NadekoCommand, Usage, Description, Aliases]
+        public Task Confused([Remainder] string user_mention = null)
+            => InternalGifCommand(Context.Message, user_mention, "anime confused");
+
+        [NadekoCommand, Usage, Description, Aliases]
+        public Task Thinking([Remainder] string user_mention = null)
+            => InternalGifCommand(Context.Message, user_mention, "thinking");
+
+        [NadekoCommand, Usage, Description, Aliases]
+        public Task Gif([Remainder] string query = null)
+            => InternalGifCommand(Context.Message, null, query);
+
+        public async Task InternalGifCommand(IUserMessage umsg, string user_mention, string query)
+        {
+            string tenorApiKey = _creds.TenorApiKey;
+            if (string.IsNullOrWhiteSpace(tenorApiKey))
+            {
+                await ReplyErrorLocalized("tenor_api_missing").ConfigureAwait(false);
+                return;
+            }
+
+            query = query?.Trim();
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return;
+            }
+            query = WebUtility.UrlEncode(query).Replace(' ', '+');
+
+            string result = await _service.GetRandomGif(tenorApiKey, query, true).ConfigureAwait(false);
+            await umsg.Channel.SendMessageAsync(user_mention, embed: new EmbedBuilder()
+                .WithOkColor()
+                .WithImageUrl(result).Build());
+        }
+
         //[NadekoCommand, Usage, Description, Aliases]
         //public async Task MCPing([Remainder] string query2 = null)
         //{
