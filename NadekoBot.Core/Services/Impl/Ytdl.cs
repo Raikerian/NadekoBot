@@ -16,7 +16,7 @@ namespace NadekoBot.Core.Services.Impl
 
         public async Task<string> GetDataAsync(string url, bool tryForBestAudio)
         {
-            var arguments = $"--geo-bypass";
+            var arguments = $"-4 --geo-bypass";
             if (tryForBestAudio)
             {
                 arguments += $" -f bestaudio";
