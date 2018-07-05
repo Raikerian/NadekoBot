@@ -41,7 +41,8 @@ namespace NadekoBot.Modules.Searches.Services
         private readonly NadekoRandom _rng;
 
         public ConcurrentDictionary<ulong, bool> TranslatedChannels { get; } = new ConcurrentDictionary<ulong, bool>();
-        public ConcurrentDictionary<UserChannelPair, string> UserLanguages { get; } = new ConcurrentDictionary<UserChannelPair, string>();
+        // (userId, channelId)
+        public ConcurrentDictionary<(ulong UserId, ulong ChannelId), string> UserLanguages { get; } = new ConcurrentDictionary<(ulong, ulong), string>();
 
         public List<WoWJoke> WowJokes { get; } = new List<WoWJoke>();
         public List<MagicItem> MagicItems { get; } = new List<MagicItem>();
@@ -68,7 +69,7 @@ namespace NadekoBot.Modules.Searches.Services
 
                 if (data == null)
                 {
-                    data = await Http.GetStringAsync("https://api.coinmarketcap.com/v1/ticker/")
+                    data = await Http.GetStringAsync(new Uri("https://api.coinmarketcap.com/v1/ticker/"))
                         .ConfigureAwait(false);
 
                     await r.StringSetAsync("crypto_data", data, TimeSpan.FromHours(1)).ConfigureAwait(false);
@@ -116,11 +117,7 @@ namespace NadekoBot.Modules.Searches.Services
                         if (!TranslatedChannels.TryGetValue(umsg.Channel.Id, out var autoDelete))
                             return;
 
-                        var key = new UserChannelPair()
-                        {
-                            UserId = umsg.Author.Id,
-                            ChannelId = umsg.Channel.Id,
-                        };
+                        var key = (umsg.Author.Id, umsg.Channel.Id);
 
                         if (!UserLanguages.TryGetValue(key, out string langs))
                             return;
@@ -129,7 +126,9 @@ namespace NadekoBot.Modules.Searches.Services
                                             .ConfigureAwait(false);
                         if (autoDelete)
                             try { await umsg.DeleteAsync().ConfigureAwait(false); } catch { }
-                        await umsg.Channel.SendConfirmAsync($"{umsg.Author.Mention} `:` " + text.Replace("<@ ", "<@").Replace("<@! ", "<@!")).ConfigureAwait(false);
+                        await umsg.Channel.SendConfirmAsync($"{umsg.Author.Mention} `:` "
+                            + text.Replace("<@ ", "<@", StringComparison.InvariantCulture)
+                                  .Replace("<@! ", "<@!", StringComparison.InvariantCulture)).ConfigureAwait(false);
                     }
                     catch { }
                 });
@@ -152,12 +151,12 @@ namespace NadekoBot.Modules.Searches.Services
                 _log.Warn("data/magicitems.json is missing. Magic items are not loaded.");
         }
 
-        public async Task<Image<Rgba32>> GetRipPictureAsync(string text, string imgUrl)
+        public async Task<Image<Rgba32>> GetRipPictureAsync(string text, Uri imgUrl)
         {
-            var (succ, data) = await _cache.TryGetImageDataAsync(imgUrl);
+            var (succ, data) = await _cache.TryGetImageDataAsync(imgUrl).ConfigureAwait(false);
             if (!succ)
             {
-                using (var temp = await Http.GetAsync(imgUrl, HttpCompletionOption.ResponseHeadersRead))
+                using (var temp = await Http.GetAsync(imgUrl, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
                 {
                     if (temp.Content.Headers.ContentType.MediaType != "image/png"
                         && temp.Content.Headers.ContentType.MediaType != "image/jpeg"
@@ -165,7 +164,7 @@ namespace NadekoBot.Modules.Searches.Services
                         data = null;
                     else
                     {
-                        using (var tempDraw = ImageSharp.Image.Load(await temp.Content.ReadAsStreamAsync()).Resize(69, 70))
+                        using (var tempDraw = ImageSharp.Image.Load(await temp.Content.ReadAsStreamAsync().ConfigureAwait(false)).Resize(69, 70))
                         {
                             tempDraw.ApplyRoundedCorners(35);
                             data = tempDraw.ToStream().ToArray();
@@ -173,7 +172,7 @@ namespace NadekoBot.Modules.Searches.Services
                     }
                 }
 
-                await _cache.SetImageDataAsync(imgUrl, data);
+                await _cache.SetImageDataAsync(imgUrl, data).ConfigureAwait(false);
             }
             var bg = ImageSharp.Image.Load(_imgs.Rip.ToArray());
 
@@ -200,7 +199,7 @@ namespace NadekoBot.Modules.Searches.Services
                 });
 
             //flowa
-            using (var flowers = Image.Load(_imgs.FlowerCircle.ToArray()))
+            using (var flowers = Image.Load(_imgs.RipOverlay.ToArray()))
             {
                 bg.DrawImage(flowers,
                     default,
@@ -213,14 +212,14 @@ namespace NadekoBot.Modules.Searches.Services
 
         public async Task<string> Translate(string langs, string text = null)
         {
+            if (string.IsNullOrWhiteSpace(text))
+                throw new ArgumentException("Text is empty or null", nameof(text));
             var langarr = langs.ToLowerInvariant().Split('>');
             if (langarr.Length != 2)
-                throw new ArgumentException();
+                throw new ArgumentException("Langs does not have 2 parts separated by a >", nameof(langs));
             var from = langarr[0];
             var to = langarr[1];
             text = text?.Trim();
-            if (string.IsNullOrWhiteSpace(text))
-                throw new ArgumentException();
             return (await _google.Translate(text, from, to).ConfigureAwait(false)).SanitizeMentions();
         }
 
@@ -259,7 +258,7 @@ namespace NadekoBot.Modules.Searches.Services
             bool added;
             using (var uow = _db.UnitOfWork)
             {
-                var gc = uow.GuildConfigs.For(guildId, set => set.Include(y => y.NsfwBlacklistedTags));
+                var gc = uow.GuildConfigs.ForId(guildId, set => set.Include(y => y.NsfwBlacklistedTags));
                 if (gc.NsfwBlacklistedTags.Add(tagObj))
                     added = true;
                 else
@@ -285,14 +284,14 @@ namespace NadekoBot.Modules.Searches.Services
 
         public async Task<string> GetYomamaJoke()
         {
-            var response = await Http.GetStringAsync("http://api.yomomma.info/").ConfigureAwait(false);
+            var response = await Http.GetStringAsync(new Uri("http://api.yomomma.info/")).ConfigureAwait(false);
             return JObject.Parse(response)["joke"].ToString() + " 😆";
         }
 
-        public async Task<(string Text, string BaseUri)> GetRandomJoke()
+        public static async Task<(string Text, string BaseUri)> GetRandomJoke()
         {
             var config = AngleSharp.Configuration.Default.WithDefaultLoader();
-            using (var document = await BrowsingContext.New(config).OpenAsync("http://www.goodbadjokes.com/random"))
+            using (var document = await BrowsingContext.New(config).OpenAsync("http://www.goodbadjokes.com/random").ConfigureAwait(false))
             {
                 var html = document.QuerySelector(".post > .joke-body-wrap > .joke-content");
 
@@ -305,7 +304,7 @@ namespace NadekoBot.Modules.Searches.Services
 
         public async Task<string> GetChuckNorrisJoke()
         {
-            var response = await Http.GetStringAsync("http://api.icndb.com/jokes/random/").ConfigureAwait(false);
+            var response = await Http.GetStringAsync(new Uri("http://api.icndb.com/jokes/random/")).ConfigureAwait(false);
             return JObject.Parse(response)["value"]["joke"].ToString() + " 😆";
         }
 
@@ -344,11 +343,5 @@ namespace NadekoBot.Modules.Searches.Services
             _imageCacher.Clear();
             return Task.CompletedTask;
         }
-    }
-
-    public struct UserChannelPair
-    {
-        public ulong UserId { get; set; }
-        public ulong ChannelId { get; set; }
     }
 }

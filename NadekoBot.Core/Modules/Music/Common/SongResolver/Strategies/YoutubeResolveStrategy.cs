@@ -20,14 +20,14 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
 
         public async Task<SongInfo> ResolveSong(string query)
         {
-            // try
-            // {
-            //     SongInfo s = await ResolveWithYtExplode(query);
-            //     if (s != null)
-            //         return s;
-            // }
-            // catch { }
-            return await ResolveWithYtDl(query);
+            try
+            {
+                SongInfo s = await ResolveWithYtExplode(query).ConfigureAwait(false);
+                if (s != null)
+                    return s;
+            }
+            catch { }
+            return await ResolveWithYtDl(query).ConfigureAwait(false);
         }
 
         private async Task<SongInfo> ResolveWithYtExplode(string query)
@@ -37,21 +37,21 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
             if (!YoutubeClient.TryParseVideoId(query, out var id))
             {
                 _log.Info("Searching for video");
-                var videos = await client.SearchVideosAsync(query, 1);
+                var videos = await client.SearchVideosAsync(query, 1).ConfigureAwait(false);
 
                 video = videos.FirstOrDefault();
             }
             else
             {
                 _log.Info("Getting video with id");
-                video = await client.GetVideoAsync(id);
+                video = await client.GetVideoAsync(id).ConfigureAwait(false);
             }
 
             if (video == null)
                 return null;
 
             _log.Info("Video found");
-            var streamInfo = await client.GetVideoMediaStreamInfosAsync(video.Id);
+            var streamInfo = await client.GetVideoMediaStreamInfosAsync(video.Id).ConfigureAwait(false);
             var stream = streamInfo.Audio
                 .OrderByDescending(x => x.Bitrate)
                 .FirstOrDefault();
@@ -83,19 +83,17 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
             string[] data;
             try
             {
-                bool tryForBestAudio = true;
-                using (var ytdl = new YtdlOperation())
-                {
-                    data = (await ytdl.GetDataAsync(query, tryForBestAudio)).Split('\n');
-                    if (data.Length < 6)
-                    {
-                        // try without best audio flag as it might be youtube stream
-                        // which does not have bestaudio stream
-                        _log.Info("Trying to request stream without bestaudio flag.");
-                        tryForBestAudio = false;
-                        data = (await ytdl.GetDataAsync(query, tryForBestAudio)).Split('\n');
-                    }
-                }
+				bool tryForBestAudio = true;
+                var ytdl = new YtdlOperation();
+                data = (await ytdl.GetDataAsync(query, tryForBestAudio).ConfigureAwait(false)).Split('\n');
+				if (data.Length < 6)
+				{
+					// try without best audio flag as it might be youtube stream
+					// which does not have bestaudio stream
+					_log.Info("Trying to request stream without bestaudio flag.");
+					tryForBestAudio = false;
+					data = (await ytdl.GetDataAsync(query, tryForBestAudio).ConfigureAwait(false)).Split('\n');
+				}
 
                 if (data.Length < 6)
                 {
@@ -114,10 +112,8 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
                     VideoId = data[1],
                     Uri = async () =>
                     {
-                        using (var ytdl = new YtdlOperation())
-                        {
-                            data = (await ytdl.GetDataAsync(query, tryForBestAudio)).Split('\n');
-                        }
+                        var ytdlo = new YtdlOperation();
+                        data = (await ytdlo.GetDataAsync(query, tryForBestAudio).ConfigureAwait(false)).Split('\n');
                         if (data.Length < 6)
                         {
                             _log.Info("No song found. Data less than 6");
