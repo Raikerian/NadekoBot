@@ -11,6 +11,7 @@ namespace NadekoBot.Modules.Music.Common
         private Process p;
         private readonly PoopyBufferReborn _buffer;
         private Stream _outStream;
+        private bool _ffmpegProcessFinished;
 
         private readonly Logger _log;
 
@@ -27,6 +28,8 @@ namespace NadekoBot.Modules.Music.Common
                 this.p = StartFFmpegProcess(SongUri);
                 this._outStream = this.p.StandardOutput.BaseStream;
                 this._buffer = new PoopyBufferReborn(this._outStream);
+                this.p.EnableRaisingEvents = true;
+                this.p.Exited += new EventHandler(FfmpegProcessExited);
             }
             catch (System.ComponentModel.Win32Exception)
             {
@@ -50,6 +53,7 @@ Check the guides for your platform on how to setup ffmpeg correctly:
             if (!_isLocal)
                 args = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 " + args;
 
+            _ffmpegProcessFinished = false;
             return Process.Start(new ProcessStartInfo
             {
                 FileName = "ffmpeg",
@@ -59,6 +63,12 @@ Check the guides for your platform on how to setup ffmpeg correctly:
                 RedirectStandardError = false,
                 CreateNoWindow = true,
             });
+        }
+
+        internal void FfmpegProcessExited(object sender, System.EventArgs e)
+        {
+            _log.Info("ffmpeg process finished");
+            _ffmpegProcessFinished = true;
         }
 
         private readonly bool _isLocal;
@@ -94,6 +104,14 @@ Check the guides for your platform on how to setup ffmpeg correctly:
         public void StartBuffering()
         {
             this._buffer.StartBuffering();
+        }
+
+        public bool EmptyBuffer()
+        {
+            // by determining empty buffer this way, we will no longer drop streams
+            // due to possible slow internet issue, as ffmpeg process always runs trying to reconnect
+            // for more bytes
+            return _ffmpegProcessFinished && this._buffer.EmptyBuffer();
         }
     }
 }

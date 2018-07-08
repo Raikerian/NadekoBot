@@ -212,15 +212,6 @@ namespace NadekoBot.Modules.Music.Common
                             continue;
                         }
                         b.StartBuffering();
-                        await Task.Delay(DELAY_VALUE).ConfigureAwait(false);
-                        Int32 totalDelayMs = 0;
-                        do
-                        {
-                            _log.Warn("Buffering is taking too long. Waiting " + ((MAX_BUFFERING_DELAY - totalDelayMs) / 1000) + " more seconds...");
-                            await Task.Delay(DELAY_VALUE).ConfigureAwait(false);
-                            totalDelayMs += DELAY_VALUE;
-                        }
-                        while (b.Read(3840).Length == 0 && totalDelayMs < MAX_BUFFERING_DELAY);
                         pcm = ac.CreatePCMStream(AudioApplication.Music, bufferMillis: 1);
                         _log.Info("Created pcm stream");
                         OnStarted?.Invoke(this, data);
@@ -228,7 +219,7 @@ namespace NadekoBot.Modules.Music.Common
                         while (MaxPlaytimeSeconds <= 0 || MaxPlaytimeSeconds >= CurrentTime.TotalSeconds)
                         {
                             var buffer = b.Read(3840);
-                            if (buffer.Length == 0)
+                            if (b.EmptyBuffer())
                                 break;
                             AdjustVolume(buffer, Volume);
                             await pcm.WriteAsync(buffer, 0, buffer.Length, cancelToken).ConfigureAwait(false);

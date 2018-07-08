@@ -11,6 +11,8 @@ namespace NadekoBot.Core.Modules.Music.Common
 
         private readonly byte[] _buffer;
 
+        private readonly int _bufferSize;
+
         public int ReadPosition { get; private set; }
         public int WritePosition { get; private set; }
 
@@ -28,6 +30,7 @@ namespace NadekoBot.Core.Modules.Music.Common
                 bufferSize = 10.MiB();
             _inStream = inStream;
             _buffer = new byte[bufferSize];
+            _bufferSize = bufferSize;
 
             ReadPosition = 0;
             WritePosition = 0;
@@ -96,6 +99,11 @@ namespace NadekoBot.Core.Modules.Music.Common
                 ReadPosition = fromStart;
                 return toReturn;
             }
+        }
+
+        public bool EmptyBuffer()
+        {
+            return FreeSpace == _bufferSize;
         }
     }
 }
