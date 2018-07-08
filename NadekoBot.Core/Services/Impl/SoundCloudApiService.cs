@@ -73,12 +73,12 @@ namespace NadekoBot.Core.Services.Impl
         public string TrackLink { get; set; } = "";
         [JsonProperty("artwork_url")]
         public string ArtworkUrl { get; set; } = "";
-        public Task<string> StreamLink()
+        public async Task<string> StreamLink()
         {
             using (var http = new HttpClient())
             {
                 // https://api.soundcloud.com/tracks/{Id}/stream?client_id=
-                return http.GetStringAsync(new Uri($"http://scapi.nadekobot.me/stream/{Id}"));
+                return await http.GetStringAsync(new Uri($"http://scapi.nadekobot.me/stream/{Id}")).ConfigureAwait(false);
             }
         }
     }

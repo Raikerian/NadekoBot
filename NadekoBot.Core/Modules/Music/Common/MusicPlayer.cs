@@ -184,7 +184,8 @@ namespace NadekoBot.Modules.Music.Common
                     SongBuffer b = null;
                     try
                     {
-                        b = new SongBuffer(await data.Song.Uri().ConfigureAwait(false), data.Song.ProviderType == MusicType.Local);
+                        string songUri = await data.Song.Uri().ConfigureAwait(false);
+                        b = new SongBuffer(songUri, data.Song.ProviderType == MusicType.Local);
                         //_log.Info("Created buffer, buffering...");
 
                         //var bufferTask = b.StartBuffering(cancelToken);
@@ -215,7 +216,7 @@ namespace NadekoBot.Modules.Music.Common
                         Int32 totalDelayMs = 0;
                         do
                         {
-                            _log.Warn("Buffering is taking too long. Waiting " + ((MAX_BUFFERING_DELAY - totalDelayMs)/1000) + " more seconds...");
+                            _log.Warn("Buffering is taking too long. Waiting " + ((MAX_BUFFERING_DELAY - totalDelayMs) / 1000) + " more seconds...");
                             await Task.Delay(DELAY_VALUE).ConfigureAwait(false);
                             totalDelayMs += DELAY_VALUE;
                         }
