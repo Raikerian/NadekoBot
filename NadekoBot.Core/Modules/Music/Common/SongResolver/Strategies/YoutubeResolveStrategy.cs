@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NadekoBot.Core.Services.Database.Models;
 using NadekoBot.Core.Services.Impl;
@@ -14,7 +12,6 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
     public class YoutubeResolveStrategy : IResolveStrategy
     {
         private readonly Logger _log;
-        private readonly Regex m3uRegex = new Regex("(?<url>^[^#].*)", RegexOptions.Compiled | RegexOptions.Multiline);
 
         public YoutubeResolveStrategy()
         {
@@ -60,7 +57,7 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
             string streamUrl = null;
             if (isLivestream)
             {
-                streamUrl = await HandleStreamContainers(streamInfo.HlsLiveStreamUrl).ConfigureAwait(false);
+                streamUrl = streamInfo.HlsLiveStreamUrl;
             }
             else
             {
@@ -145,36 +142,6 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
             catch (Exception ex)
             {
                 _log.Warn(ex);
-                return null;
-            }
-        }
-
-        private async Task<string> HandleStreamContainers(string query)
-        {
-            string file = null;
-            try
-            {
-                using (var http = new HttpClient())
-                {
-                    file = await http.GetStringAsync(query).ConfigureAwait(false);
-                }
-            }
-            catch
-            {
-                return query;
-            }
-
-            // currently assuming that all youtube streams are m3u type (m3u8 if be specific)
-            // monitor this for the future
-            try
-            {
-                var m = m3uRegex.Match(file);
-                var res = m.Groups["url"]?.ToString();
-                return res?.Trim();
-            }
-            catch
-            {
-                _log.Warn($"Failed reading youtube stream file:\n{file}");
                 return null;
             }
         }
