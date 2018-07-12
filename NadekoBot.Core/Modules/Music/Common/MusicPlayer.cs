@@ -186,7 +186,7 @@ namespace NadekoBot.Modules.Music.Common
                     {
                         string songUri = await data.Song.Uri().ConfigureAwait(false);
                         b = new SongBuffer(songUri, data.Song.ProviderType == MusicType.Local);
-                        _log.Info(songUri);
+                        //_log.Info("Created buffer, buffering...");
 
                         //var bufferTask = b.StartBuffering(cancelToken);
                         //var timeout = Task.Delay(10000);
