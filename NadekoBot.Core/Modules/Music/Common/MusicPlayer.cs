@@ -185,7 +185,9 @@ namespace NadekoBot.Modules.Music.Common
                     try
                     {
                         string songUri = await data.Song.Uri().ConfigureAwait(false);
-                        b = new SongBuffer(songUri, data.Song.ProviderType == MusicType.Local);
+                        bool isYoutubeLivestream = data.Song.ProviderType == MusicType.YouTube && data.Song.TotalTime == TimeSpan.MaxValue;
+                        bool isLocal = data.Song.ProviderType == MusicType.Local;
+                        b = new SongBuffer(songUri, isLocal, isYoutubeLivestream);
                         //_log.Info("Created buffer, buffering...");
 
                         //var bufferTask = b.StartBuffering(cancelToken);
