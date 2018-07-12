@@ -17,12 +17,11 @@ namespace NadekoBot.Modules.Music.Common
 
         public string SongUri { get; private set; }
 
-        public SongBuffer(string songUri, bool isLocal, bool isHls)
+        public SongBuffer(string songUri, bool isLocal)
         {
             _log = LogManager.GetCurrentClassLogger();
             this.SongUri = songUri;
             this._isLocal = isLocal;
-            this._isHls = isHls;
 
             try
             {
@@ -50,11 +49,8 @@ Check the guides for your platform on how to setup ffmpeg correctly:
 
         private Process StartFFmpegProcess(string songUri)
         {
-            if (_isHls)
-                songUri = "hls+" + songUri;
-
-            var args = $"-err_detect ignore_err -i \"{songUri}\" -f s16le -ar 48000 -vn -ac 2 pipe:1 -loglevel error";
-            if (!_isLocal && !_isHls)
+            var args = $"-err_detect ignore_err -i {songUri} -f s16le -ar 48000 -vn -ac 2 pipe:1 -loglevel error";
+            if (!_isLocal)
                 args = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 " + args;
 
             _ffmpegProcessFinished = false;
@@ -76,7 +72,6 @@ Check the guides for your platform on how to setup ffmpeg correctly:
         }
 
         private readonly bool _isLocal;
-        private readonly bool _isHls;
 
         public byte[] Read(int toRead)
         {
