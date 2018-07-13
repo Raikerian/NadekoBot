@@ -22,12 +22,12 @@ namespace NadekoBot.Modules.Music.Common.SongResolver.Strategies
         {
             try
             {
-                SongInfo s = await ResolveWithYtExplode(query).ConfigureAwait(false);
+                SongInfo s = await ResolveWithYtDl(query).ConfigureAwait(false);
                 if (s != null)
                     return s;
             }
             catch { }
-            return await ResolveWithYtDl(query).ConfigureAwait(false);
+            return await ResolveWithYtExplode(query).ConfigureAwait(false);
         }
 
         private async Task<SongInfo> ResolveWithYtExplode(string query)
