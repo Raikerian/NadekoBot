@@ -221,7 +221,7 @@ namespace NadekoBot.Modules.Music.Common
                         while (MaxPlaytimeSeconds <= 0 || MaxPlaytimeSeconds >= CurrentTime.TotalSeconds)
                         {
                             var buffer = b.Read(3840);
-                            if (b.EmptyBuffer())
+                            if (b.EmptyBuffer() || Exited || Stopped)
                                 break;
                             AdjustVolume(buffer, Volume);
                             await pcm.WriteAsync(buffer, 0, buffer.Length, cancelToken).ConfigureAwait(false);
