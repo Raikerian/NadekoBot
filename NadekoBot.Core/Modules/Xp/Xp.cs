@@ -29,9 +29,10 @@ namespace NadekoBot.Modules.Xp
         {
             user = user ?? Context.User;
             await Context.Channel.TriggerTypingAsync().ConfigureAwait(false);
-            using (var img = await _service.GenerateImageAsync((IGuildUser)user).ConfigureAwait(false))
+            var (img, fmt) = await _service.GenerateXpImageAsync((IGuildUser)user).ConfigureAwait(false);
+            using (img)
             {
-                await Context.Channel.SendFileAsync(img, $"{user.Id}_xp.png")
+                await Context.Channel.SendFileAsync(img, $"{Context.Guild.Id}_{user.Id}_xp.{fmt.FileExtensions.FirstOrDefault()}")
                     .ConfigureAwait(false);
             }
         }
@@ -276,5 +277,15 @@ namespace NadekoBot.Modules.Xp
         [RequireUserPermission(GuildPermission.Administrator)]
         public Task XpAdd(int amount, [Remainder] IGuildUser user)
             => XpAdd(amount, user.Id);
+
+        [NadekoCommand, Usage, Description, Aliases]
+        [RequireContext(ContextType.Guild)]
+        [OwnerOnly]
+        public async Task XpTemplateReload()
+        {
+            _service.ReloadXpTemplate();
+            await Task.Delay(1000).ConfigureAwait(false);
+            await ReplyConfirmLocalized("template_reloaded").ConfigureAwait(false);
+        }
     }
 }

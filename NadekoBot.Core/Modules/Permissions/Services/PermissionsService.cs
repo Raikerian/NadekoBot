@@ -73,7 +73,7 @@ namespace NadekoBot.Modules.Permissions.Services
                     perm.Index = ++max;
                     config.Permissions.Add(perm);
                 }
-                await uow.CompleteAsync().ConfigureAwait(false);
+                await uow.CompleteAsync();
                 UpdateCache(config);
             }
         }
@@ -116,8 +116,7 @@ namespace NadekoBot.Modules.Permissions.Services
 
                 if (moduleName == nameof(Permissions))
                 {
-                    var guildUser = user as IGuildUser;
-                    if (guildUser == null)
+                    if (!(user is IGuildUser guildUser))
                         return true;
 
                     if (guildUser.GuildPermissions.Administrator)

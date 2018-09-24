@@ -60,7 +60,7 @@ namespace NadekoBot.Modules.Utility
                     .AddField(fb => fb.WithName(GetText("features")).WithValue(features).WithIsInline(true))
                     .WithColor(NadekoBot.OkColor);
                 if (Uri.IsWellFormedUriString(guild.IconUrl, UriKind.Absolute))
-                    embed.WithImageUrl(guild.IconUrl);
+                    embed.WithThumbnailUrl(guild.IconUrl);
                 if (guild.Emotes.Any())
                 {
                     embed.AddField(fb => 
@@ -68,7 +68,8 @@ namespace NadekoBot.Modules.Utility
                         .WithValue(string.Join(" ", guild.Emotes
                             .Shuffle()
                             .Take(20)
-                            .Select(e => $"{e.Name} {e.ToString()}"))));
+                            .Select(e => $"{e.Name} {e.ToString()}"))
+                            .TrimTo(1020)));
                 }
                 await Context.Channel.EmbedAsync(embed).ConfigureAwait(false);
             }

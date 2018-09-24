@@ -1,17 +1,18 @@
 using Discord;
 using Discord.Commands;
-using NadekoBot.Extensions;
-using NadekoBot.Core.Services;
-using System.Threading.Tasks;
 using NadekoBot.Common;
 using NadekoBot.Common.Attributes;
-using Image = SixLabors.ImageSharp.Image;
-using NadekoBot.Core.Modules.Gambling.Common;
-using NadekoBot.Modules.Gambling.Services;
 using NadekoBot.Core.Common;
-using System;
+using NadekoBot.Core.Modules.Gambling.Common;
+using NadekoBot.Core.Services;
+using NadekoBot.Extensions;
+using NadekoBot.Modules.Gambling.Services;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace NadekoBot.Modules.Gambling
 {
@@ -35,52 +36,42 @@ namespace NadekoBot.Modules.Gambling
             [NadekoCommand, Usage, Description, Aliases]
             public async Task Flip(int count = 1)
             {
-                if (count == 1)
-                {
-                    var coins = _images.ImageUrls.Coins;
-                    if (rng.Next(0, 2) == 1)
-                    {
-                        await Context.Channel.EmbedAsync(new EmbedBuilder()
-                            .WithOkColor()
-                            .WithImageUrl(coins.Heads[rng.Next(0, coins.Heads.Length)].ToString())
-                            .WithDescription(Context.User.Mention + " " + GetText("flipped", Format.Bold(GetText("heads"))))).ConfigureAwait(false);
-
-                    }
-                    else
-                    {
-                        await Context.Channel.EmbedAsync(new EmbedBuilder()
-                            .WithOkColor()
-                            .WithImageUrl(coins.Tails[rng.Next(0, coins.Tails.Length)].ToString())
-                            .WithDescription(Context.User.Mention + " " + GetText("flipped", Format.Bold(GetText("tails"))))).ConfigureAwait(false);
-
-                    }
-                    return;
-                }
                 if (count > 10 || count < 1)
                 {
                     await ReplyErrorLocalized("flip_invalid", 10).ConfigureAwait(false);
                     return;
                 }
+                var headCount = 0;
+                var tailCount = 0;
                 var imgs = new Image<Rgba32>[count];
                 for (var i = 0; i < count; i++)
                 {
-                    using (var heads = _images.Heads[rng.Next(0, _images.Heads.Length)].ToStream())
-                    using (var tails = _images.Tails[rng.Next(0, _images.Tails.Length)].ToStream())
+                    var headsArr = _images.Heads[rng.Next(0, _images.Heads.Count)];
+                    var tailsArr = _images.Tails[rng.Next(0, _images.Tails.Count)];
+                    if (rng.Next(0, 10) < 5)
                     {
-                        if (rng.Next(0, 10) < 5)
-                        {
-                            imgs[i] = Image.Load(heads);
-                        }
-                        else
-                        {
-                            imgs[i] = Image.Load(tails);
-                        }
+                        imgs[i] = Image.Load(headsArr);
+                        headCount++;
+                    }
+                    else
+                    {
+                        imgs[i] = Image.Load(tailsArr);
+                        tailCount++;
                     }
                 }
-                using (var img = imgs.Merge())
-                using (var stream = img.ToStream())
+                using (var img = imgs.Merge(out var format))
+                using (var stream = img.ToStream(format))
                 {
-                    await Context.Channel.SendFileAsync(stream, $"{count} coins.png").ConfigureAwait(false);
+                    foreach (var i in imgs)
+                    {
+                        i.Dispose();
+                    }
+                    var msg = count != 1
+                        ? Format.Bold(Context.User.ToString()) + " " + GetText("flip_results", count, headCount, tailCount)
+                        : Format.Bold(Context.User.ToString()) + " " + GetText("flipped", headCount > 0
+                            ? Format.Bold(GetText("heads"))
+                            : Format.Bold(GetText("tails")));
+                    await Context.Channel.SendFileAsync(stream, $"{count} coins.{format.FileExtensions.First()}", msg).ConfigureAwait(false);
                 }
             }
 
@@ -109,7 +100,7 @@ namespace NadekoBot.Modules.Gambling
                 BetFlipGuess result;
                 Uri imageToSend;
                 var coins = _images.ImageUrls.Coins;
-                if (rng.Next(0, 2) == 1)
+                if (rng.Next(0, 1000) <= 499)
                 {
                     imageToSend = coins.Heads[rng.Next(0, coins.Heads.Length)];
                     result = BetFlipGuess.Heads;

@@ -1,9 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.EntityFrameworkCore;
 using NadekoBot.Extensions;
-using NadekoBot.Core.Services;
 using NadekoBot.Core.Services.Database.Models;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,14 +17,10 @@ namespace NadekoBot.Modules.Administration
         [Group]
         public class UserPunishCommands : NadekoSubmodule<UserPunishService>
         {
-            private readonly DbService _db;
-            private readonly ICurrencyService _cs;
             private readonly MuteService _mute;
 
-            public UserPunishCommands(DbService db, MuteService mute, ICurrencyService cs)
+            public UserPunishCommands(MuteService mute)
             {
-                _db = db;
-                _cs = cs;
                 _mute = mute;
             }
 
@@ -53,7 +47,18 @@ namespace NadekoBot.Modules.Administration
                 {
 
                 }
-                var punishment = await _service.Warn(Context.Guild, user.Id, Context.User.ToString(), reason).ConfigureAwait(false);
+
+                PunishmentAction? punishment;
+                try
+                {
+                    punishment = await _service.Warn(Context.Guild, user.Id, Context.User, reason).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _log.Warn(ex.Message);
+                    await ReplyErrorLocalized("cant_apply_punishment").ConfigureAwait(false);
+                    return;
+                }
 
                 if (punishment == null)
                 {
@@ -100,11 +105,7 @@ namespace NadekoBot.Modules.Administration
             {
                 if (page < 0)
                     return;
-                Warning[] warnings;
-                using (var uow = _db.UnitOfWork)
-                {
-                    warnings = uow.Warnings.ForId(Context.Guild.Id, userId);
-                }
+                var warnings = _service.UserWarnings(Context.Guild.Id, userId);
 
                 warnings = warnings.Skip(page * 9)
                     .Take(9)
@@ -144,11 +145,7 @@ namespace NadekoBot.Modules.Administration
             {
                 if (--page < 0)
                     return;
-                IGrouping<ulong, Warning>[] warnings;
-                using (var uow = _db.UnitOfWork)
-                {
-                    warnings = uow.Warnings.GetForGuild(Context.Guild.Id).GroupBy(x => x.UserId).ToArray();
-                }
+                var warnings = _service.WarnlogAll(Context.Guild.Id);
 
                 await Context.SendPaginatedConfirmAsync(page, (curPage) =>
                 {
@@ -183,19 +180,7 @@ namespace NadekoBot.Modules.Administration
             {
                 if (index < 0)
                     return;
-                var success = false;
-                using (var uow = _db.UnitOfWork)
-                {
-                    if (index == 0)
-                    {
-                        await uow.Warnings.ForgiveAll(Context.Guild.Id, userId, Context.User.ToString()).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        success = uow.Warnings.Forgive(Context.Guild.Id, userId, Context.User.ToString(), index - 1);
-                    }
-                    uow.Complete();
-                }
+                var success = await _service.WarnClearAsync(Context.Guild.Id, userId, index, Context.User.ToString());
                 var userStr = Format.Bold((Context.Guild as SocketGuild)?.GetUser(userId)?.ToString() ?? userId.ToString());
                 if (index == 0)
                 {
@@ -220,24 +205,10 @@ namespace NadekoBot.Modules.Administration
             [RequireUserPermission(GuildPermission.BanMembers)]
             public async Task WarnPunish(int number, PunishmentAction punish, StoopidTime time = null)
             {
-                if ((punish != PunishmentAction.Ban && punish != PunishmentAction.Mute) && time != null)
-                    return;
-                if (number <= 0 || (time != null && time.Time > TimeSpan.FromDays(49)))
-                    return;
+                var success = _service.WarnPunish(Context.Guild.Id, number, punish, time);
 
-                using (var uow = _db.UnitOfWork)
-                {
-                    var ps = uow.GuildConfigs.ForId(Context.Guild.Id, set => set.Include(x => x.WarnPunishments)).WarnPunishments;
-                    ps.RemoveAll(x => x.Count == number);
-
-                    ps.Add(new WarningPunishment()
-                    {
-                        Count = number,
-                        Punishment = punish,
-                        Time = (int?)(time?.Time.TotalMinutes) ?? 0,
-                    });
-                    uow.Complete();
-                }
+                if (!success)
+                    return;
 
                 await ReplyConfirmLocalized("warn_punish_set",
                     Format.Bold(punish.ToString()),
@@ -249,19 +220,9 @@ namespace NadekoBot.Modules.Administration
             [RequireUserPermission(GuildPermission.BanMembers)]
             public async Task WarnPunish(int number)
             {
-                if (number <= 0)
-                    return;
-
-                using (var uow = _db.UnitOfWork)
+                if (!_service.WarnPunish(Context.Guild.Id, number))
                 {
-                    var ps = uow.GuildConfigs.ForId(Context.Guild.Id, set => set.Include(x => x.WarnPunishments)).WarnPunishments;
-                    var p = ps.FirstOrDefault(x => x.Count == number);
-
-                    if (p != null)
-                    {
-                        uow._context.Remove(p);
-                        uow.Complete();
-                    }
+                    return;
                 }
 
                 await ReplyConfirmLocalized("warn_punish_rem",
@@ -272,14 +233,7 @@ namespace NadekoBot.Modules.Administration
             [RequireContext(ContextType.Guild)]
             public async Task WarnPunishList()
             {
-                WarningPunishment[] ps;
-                using (var uow = _db.UnitOfWork)
-                {
-                    ps = uow.GuildConfigs.ForId(Context.Guild.Id, gc => gc.Include(x => x.WarnPunishments))
-                        .WarnPunishments
-                        .OrderBy(x => x.Count)
-                        .ToArray();
-                }
+                var ps = _service.WarnPunishList(Context.Guild.Id);
 
                 string list;
                 if (ps.Any())
@@ -481,36 +435,7 @@ namespace NadekoBot.Modules.Administration
                 if (string.IsNullOrWhiteSpace(people))
                     return;
 
-                var gusers = ((SocketGuild)Context.Guild).Users;
-                //get user objects and reasons
-                var bans = people.Split("\n")
-                    .Select(x =>
-                    {
-                        var split = x.Trim().Split(" ");
-
-                        var reason = string.Join(" ", split.Skip(1));
-
-                        if (ulong.TryParse(split[0], out var id))
-                            return (Original: split[0], Id: id, Reason: reason);
-
-                        return (Original: split[0],
-                            Id: gusers
-                                .FirstOrDefault(u => u.ToString().ToLowerInvariant() == x)
-                                ?.Id,
-                            Reason: reason);
-                    })
-                    .ToArray();
-
-                //if user is null, means that person couldn't be found
-                var missing = bans
-                    .Where(x => !x.Id.HasValue)
-                    .ToArray();
-
-                //get only data for found users
-                var found = bans
-                    .Where(x => x.Id.HasValue)
-                    .Select(x => x.Id.Value)
-                    .ToArray();
+                var (bans, missing) = _service.MassKill((SocketGuild)Context.Guild, people);
 
                 var missStr = string.Join("\n", missing);
                 if (string.IsNullOrWhiteSpace(missStr))
@@ -518,24 +443,9 @@ namespace NadekoBot.Modules.Administration
 
                 //send a message but don't wait for it
                 var banningMessageTask = Context.Channel.EmbedAsync(new EmbedBuilder()
-                    .WithDescription(GetText("mass_kill_in_progress", bans.Length))
-                    .AddField(GetText("invalid", missing.Length), missStr)
+                    .WithDescription(GetText("mass_kill_in_progress", bans.Count()))
+                    .AddField(GetText("invalid", missing), missStr)
                     .WithOkColor());
-
-                using (var uow = _db.UnitOfWork)
-                {
-                    var bc = uow.BotConfig.GetOrCreate(set => set.Include(x => x.Blacklist));
-                    //blacklist the users
-                    bc.Blacklist.AddRange(found.Select(x =>
-                        new BlacklistItem
-                        {
-                            ItemId = x,
-                            Type = BlacklistType.User,
-                        }));
-                    //clear their currencies
-                    uow.DiscordUsers.RemoveFromMany(found.Select(x => x).ToList());
-                    uow.Complete();
-                }
 
                 Bc.Reload();
 
@@ -552,8 +462,8 @@ namespace NadekoBot.Modules.Administration
                 var banningMessage = await banningMessageTask.ConfigureAwait(false);
 
                 await banningMessage.ModifyAsync(x => x.Embed = new EmbedBuilder()
-                    .WithDescription(GetText("mass_kill_completed", bans.Length))
-                    .AddField(GetText("invalid", missing.Length), missStr)
+                    .WithDescription(GetText("mass_kill_completed", bans.Count()))
+                    .AddField(GetText("invalid", missing), missStr)
                     .WithOkColor()
                     .Build()).ConfigureAwait(false);
             }
