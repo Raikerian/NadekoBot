@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.Audio;
 using System;
 using System.Threading;
@@ -316,7 +316,8 @@ namespace NadekoBot.Modules.Music.Common
                                     lock (locker)
                                     {
                                         _log.Info("Next fair song");
-                                        var q = Queue.ToArray().Songs.Shuffle().ToArray();
+                                        var queueList = Queue.ToList();
+                                        var q = queueList.Shuffle().ToArray();
 
                                         bool found = false;
                                         for (var i = 0; i < q.Length; i++) //first try to find a queuer who didn't have their song played recently
@@ -324,7 +325,7 @@ namespace NadekoBot.Modules.Music.Common
                                             var item = q[i];
                                             if (RecentlyPlayedUsers.Add(item.QueuerName)) // if it's found, set current song to that index
                                             {
-                                                Queue.CurrentIndex = i;
+                                                Queue.CurrentIndex = queueList.IndexOf(q[i]);
                                                 found = true;
                                                 break;
                                             }

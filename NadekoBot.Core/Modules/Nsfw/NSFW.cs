@@ -12,6 +12,7 @@ using NadekoBot.Common.Collections;
 using NadekoBot.Modules.Searches.Common;
 using NadekoBot.Modules.Searches.Services;
 using NadekoBot.Modules.Searches.Exceptions;
+using System.Net.Http;
 
 namespace NadekoBot.Modules.NSFW
 {
@@ -19,29 +20,56 @@ namespace NadekoBot.Modules.NSFW
     public class NSFW : NadekoTopLevelModule<SearchesService>
     {
         private static readonly ConcurrentHashSet<ulong> _hentaiBombBlacklist = new ConcurrentHashSet<ulong>();
+        private readonly IHttpClientFactory _httpFactory;
 
-        private async Task InternalHentai(IMessageChannel channel, string tag, bool noError)
+        public NSFW(IHttpClientFactory factory)
         {
-            var rng = new NadekoRandom();
-            var arr = Enum.GetValues(typeof(DapiSearchType));
-            var type = (DapiSearchType)arr.GetValue(new NadekoRandom().Next(2, arr.Length));
-            ImageCacherObject img;
-            try
-            {
-                img = await _service.DapiSearch(tag, type, Context.Guild?.Id, true).ConfigureAwait(false);
-            }
-            catch (TagBlacklistedException)
-            {
-                await ReplyErrorLocalized("blacklisted_tag").ConfigureAwait(false);
-                return;
-            }
+            _httpFactory = factory;
+        }
 
-            if (img == null)
+        private async Task InternalHentai(IMessageChannel channel, string tag)
+        {
+            // create a random number generator
+            var rng = new NadekoRandom();
+
+            // get all of the DAPI search types, except first 3 
+            // which are safebooru (not nsfw), and 2 furry ones 🤢
+            var listOfProviders = Enum.GetValues(typeof(DapiSearchType))
+                .Cast<DapiSearchType>()
+                .Skip(3)
+                .ToList();
+
+            // now try to get an image, if it fails return an error,
+            // keep trying for each provider until one of them is successful, or until 
+            // we run out of providers. If we run out, then return an error
+            ImageCacherObject img;
+            do
             {
-                if (!noError)
+                // random index of the providers
+                var num = rng.Next(0, listOfProviders.Count);
+                // get the type
+                var type = listOfProviders[num];
+                // remove it 
+                listOfProviders.RemoveAt(num);
+                try
+                {
+                    // get the image
+                    img = await _service.DapiSearch(tag, type, Context.Guild?.Id, true).ConfigureAwait(false);
+                }
+                catch (TagBlacklistedException)
+                {
+                    await ReplyErrorLocalized("blacklisted_tag").ConfigureAwait(false);
+                    return;
+                }
+                // if i can't find the image and i ran out of providers
+                // return the error
+                if (img == null && !listOfProviders.Any())
+                {
                     await ReplyErrorLocalized("not_found").ConfigureAwait(false);
-                return;
-            }
+                    return;
+                }
+
+            } while (img == null);
 
             await channel.EmbedAsync(new EmbedBuilder().WithOkColor()
                 .WithImageUrl(img.FileUrl)
@@ -53,7 +81,10 @@ namespace NadekoBot.Modules.NSFW
             try
             {
                 JToken obj;
-                obj = JArray.Parse(await _service.Http.GetStringAsync($"http://api.oboobs.ru/boobs/{new NadekoRandom().Next(0, 10330)}").ConfigureAwait(false))[0];
+                using (var http = _httpFactory.CreateClient())
+                {
+                    obj = JArray.Parse(await http.GetStringAsync($"http://api.oboobs.ru/boobs/{new NadekoRandom().Next(0, 10330)}").ConfigureAwait(false))[0];
+                }
                 await Channel.SendMessageAsync($"http://media.oboobs.ru/{obj["preview"]}").ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -61,13 +92,15 @@ namespace NadekoBot.Modules.NSFW
                 await Channel.SendErrorAsync(ex.Message).ConfigureAwait(false);
             }
         }
-
         private async Task InternalButts(IMessageChannel Channel)
         {
             try
             {
                 JToken obj;
-                obj = JArray.Parse(await _service.Http.GetStringAsync($"http://api.obutts.ru/butts/{new NadekoRandom().Next(0, 4335)}").ConfigureAwait(false))[0];
+                using (var http = _httpFactory.CreateClient())
+                {
+                    obj = JArray.Parse(await http.GetStringAsync($"http://api.obutts.ru/butts/{new NadekoRandom().Next(0, 4335)}").ConfigureAwait(false))[0];
+                }
                 await Channel.SendMessageAsync($"http://media.obutts.ru/{obj["preview"]}").ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -104,9 +137,9 @@ namespace NadekoBot.Modules.NSFW
                 try
                 {
                     if (tagsArr == null || tagsArr.Length == 0)
-                        await InternalHentai(Context.Channel, null, true).ConfigureAwait(false);
+                        await InternalHentai(Context.Channel, null).ConfigureAwait(false);
                     else
-                        await InternalHentai(Context.Channel, tagsArr[new NadekoRandom().Next(0, tagsArr.Length)], true).ConfigureAwait(false);
+                        await InternalHentai(Context.Channel, tagsArr[new NadekoRandom().Next(0, tagsArr.Length)]).ConfigureAwait(false);
                 }
                 catch
                 {
@@ -210,7 +243,7 @@ namespace NadekoBot.Modules.NSFW
         [NadekoCommand, Usage, Description, Aliases]
         [RequireNsfw(Group = "nsfw_or_dm"), RequireContext(ContextType.DM, Group = "nsfw_or_dm")]
         public Task Hentai([Remainder] string tag = null) =>
-            InternalHentai(Context.Channel, tag, false);
+            InternalHentai(Context.Channel, tag);
 
         [NadekoCommand, Usage, Description, Aliases]
         [RequireNsfw(Group = "nsfw_or_dm"), RequireContext(ContextType.DM, Group = "nsfw_or_dm")]
@@ -282,7 +315,10 @@ namespace NadekoBot.Modules.NSFW
             try
             {
                 JToken obj;
-                obj = JArray.Parse(await _service.Http.GetStringAsync($"http://api.oboobs.ru/boobs/{new NadekoRandom().Next(0, 10330)}").ConfigureAwait(false))[0];
+                using (var http = _httpFactory.CreateClient())
+                {
+                    obj = JArray.Parse(await http.GetStringAsync($"http://api.oboobs.ru/boobs/{new NadekoRandom().Next(0, 10330)}").ConfigureAwait(false))[0];
+                }
                 await Context.Channel.SendMessageAsync($"http://media.oboobs.ru/{obj["preview"]}").ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -298,7 +334,10 @@ namespace NadekoBot.Modules.NSFW
             try
             {
                 JToken obj;
-                obj = JArray.Parse(await _service.Http.GetStringAsync($"http://api.obutts.ru/butts/{new NadekoRandom().Next(0, 4335)}").ConfigureAwait(false))[0];
+                using (var http = _httpFactory.CreateClient())
+                {
+                    obj = JArray.Parse(await http.GetStringAsync($"http://api.obutts.ru/butts/{new NadekoRandom().Next(0, 4335)}").ConfigureAwait(false))[0];
+                }
                 await Context.Channel.SendMessageAsync($"http://media.obutts.ru/{obj["preview"]}").ConfigureAwait(false);
             }
             catch (Exception ex)

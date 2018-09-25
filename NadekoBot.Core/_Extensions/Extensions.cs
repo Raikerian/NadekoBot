@@ -1,31 +1,34 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
+using NadekoBot.Common;
+using NadekoBot.Common.Collections;
+using NadekoBot.Core.Services;
 using Newtonsoft.Json;
+using NLog;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Drawing;
+using SixLabors.Primitives;
+using SixLabors.Shapes;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Numerics;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using NadekoBot.Common.Collections;
-using SixLabors.Primitives;
-using NadekoBot.Common;
-using NadekoBot.Core.Services;
-using SixLabors.Shapes;
-using System.Numerics;
-using System.Diagnostics;
-using NLog;
-using System.Net.Http.Headers;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Processing.Drawing;
 
 namespace NadekoBot.Extensions
 {
@@ -133,8 +136,11 @@ namespace NadekoBot.Extensions
             return wrap;
         }
 
-        public static void AddFakeHeaders(this HttpClient http)
-            => AddFakeHeaders(http.DefaultRequestHeaders);
+        public static HttpClient AddFakeHeaders(this HttpClient http)
+        {
+            AddFakeHeaders(http.DefaultRequestHeaders);
+            return http;
+        }
 
         public static void AddFakeHeaders(this HttpHeaders dict)
         {
@@ -187,10 +193,17 @@ namespace NadekoBot.Extensions
         public static string ToJson<T>(this T any, Formatting formatting = Formatting.Indented) =>
             JsonConvert.SerializeObject(any, formatting);
 
-        public static MemoryStream ToStream(this Image<Rgba32> img)
+        public static MemoryStream ToStream(this Image<Rgba32> img, IImageFormat format = null)
         {
             var imageStream = new MemoryStream();
-            img.SaveAsPng(imageStream, new PngEncoder() { CompressionLevel = 9 });
+            if (format?.Name == "GIF")
+            {
+                img.SaveAsGif(imageStream);
+            }
+            else
+            {
+                img.SaveAsPng(imageStream, new PngEncoder() { CompressionLevel = 9 });
+            }
             imageStream.Position = 0;
             return imageStream;
         }
@@ -256,17 +269,47 @@ namespace NadekoBot.Extensions
 
         public static Image<Rgba32> Merge(this IEnumerable<Image<Rgba32>> images)
         {
-            var imgs = images.ToArray();
-
-            var canvas = new Image<Rgba32>(imgs.Sum(img => img.Width), imgs.Max(img => img.Height));
-
-            var xOffset = 0;
-            for (int i = 0; i < imgs.Length; i++)
+            return images.Merge(out _);
+        }
+        public static Image<Rgba32> Merge(this IEnumerable<Image<Rgba32>> images, out IImageFormat format)
+        {
+            format = ImageFormats.Png;
+            void DrawFrame(Image<Rgba32>[] imgArray, Image<Rgba32> imgFrame, int frameNumber)
             {
-                canvas.Mutate(x => x.DrawImage(GraphicsOptions.Default, imgs[i], new Point(xOffset, 0)));
-                xOffset += imgs[i].Bounds().Width;
+                var xOffset = 0;
+                for (int i = 0; i < imgArray.Length; i++)
+                {
+                    var frame = imgArray[i].Frames.CloneFrame(frameNumber % imgArray[i].Frames.Count);
+                    imgFrame.Mutate(x => x.DrawImage(GraphicsOptions.Default, frame, new Point(xOffset, 0)));
+                    xOffset += imgArray[i].Bounds().Width;
+                }
             }
 
+            var imgs = images.ToArray();
+            int frames = images.Max(x => x.Frames.Count);
+
+            var width = imgs.Sum(img => img.Width);
+            var height = imgs.Max(img => img.Height);
+            var canvas = new Image<Rgba32>(width, height);
+            if (frames == 1)
+            {
+                DrawFrame(imgs, canvas, 0);
+                return canvas;
+            }
+
+            format = ImageFormats.Gif;
+            for (int j = 0; j < frames; j++)
+            {
+                using (var imgFrame = new Image<Rgba32>(width, height))
+                {
+                    DrawFrame(imgs, imgFrame, j);
+
+                    var frameToAdd = imgFrame.Frames.First();
+                    frameToAdd.MetaData.DisposalMethod = SixLabors.ImageSharp.Formats.Gif.DisposalMethod.RestoreToBackground;
+                    canvas.Frames.AddFrame(frameToAdd);
+                }
+            }
+            canvas.Frames.RemoveFrame(0);
             return canvas;
         }
 
@@ -274,6 +317,94 @@ namespace NadekoBot.Extensions
         {
             _log.Info(name + " | " + sw.Elapsed.TotalSeconds.ToString("F2"));
             sw.Reset();
+        }
+
+        public static bool IsImage(this HttpResponseMessage msg) => IsImage(msg, out _);
+
+        public static bool IsImage(this HttpResponseMessage msg, out string mimeType)
+        {
+            mimeType = msg.Content.Headers.ContentType.MediaType;
+            if (mimeType == "image/png"
+                    || mimeType == "image/jpeg"
+                    || mimeType == "image/gif")
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public static long? GetImageSize(this HttpResponseMessage msg)
+        {
+            if (msg.Content.Headers.ContentLength == null)
+            {
+                return null;
+            }
+
+            return msg.Content.Headers.ContentLength / 1.MB();
+        }
+
+
+
+        public static IEnumerable<Type> LoadFrom(this IServiceCollection collection, Assembly assembly)
+        {
+            // list of all the types which are added with this method
+            List<Type> addedTypes = new List<Type>();
+
+            Type[] allTypes;
+            try
+            {
+                // first, get all types in te assembly
+                allTypes = assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                _log.Warn(ex);
+                return Enumerable.Empty<Type>();
+            }
+            // all types which have INService implementation are services
+            // which are supposed to be loaded with this method
+            // ignore all interfaces and abstract classes
+            var services = new Queue<Type>(allTypes
+                    .Where(x => x.GetInterfaces().Contains(typeof(INService))
+                        && !x.GetTypeInfo().IsInterface && !x.GetTypeInfo().IsAbstract
+#if GLOBAL_NADEKO
+                        && x.GetTypeInfo().GetCustomAttribute<NoPublicBotAttribute>() == null
+#endif
+                            )
+                    .ToArray());
+
+            // we will just return those types when we're done instantiating them
+            addedTypes.AddRange(services);
+
+            // get all interfaces which inherit from INService
+            // as we need to also add a service for each one of interfaces
+            // so that DI works for them too
+            var interfaces = new HashSet<Type>(allTypes
+                    .Where(x => x.GetInterfaces().Contains(typeof(INService))
+                        && x.GetTypeInfo().IsInterface));
+
+            // keep instantiating until we've instantiated them all
+            while (services.Count > 0)
+            {
+                var serviceType = services.Dequeue(); //get a type i need to add
+
+                if (collection.FirstOrDefault(x => x.ServiceType == serviceType) != null) // if that type is already added, skip
+                    continue;
+
+                //also add the same type 
+                var interfaceType = interfaces.FirstOrDefault(x => serviceType.GetInterfaces().Contains(x));
+                if (interfaceType != null)
+                {
+                    addedTypes.Add(interfaceType);
+                    collection.AddSingleton(interfaceType, serviceType);
+                }
+                else
+                {
+                    collection.AddSingleton(serviceType, serviceType);
+                }
+            }
+
+            return addedTypes;
         }
     }
 }

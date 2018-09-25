@@ -7,6 +7,7 @@ using System;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Data.Sqlite;
 using System.IO;
+using NadekoBot.Core.Services.Impl;
 
 namespace NadekoBot.Core.Services.Database
 {
@@ -15,7 +16,8 @@ namespace NadekoBot.Core.Services.Database
         public NadekoContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<NadekoContext>();
-            var builder = new SqliteConnectionStringBuilder("Data Source=data/NadekoBot.db");
+            IBotCredentials creds = new BotCredentials();
+            var builder = new SqliteConnectionStringBuilder(creds.Db.ConnectionString);
             builder.DataSource = Path.Combine(AppContext.BaseDirectory, builder.DataSource);
             optionsBuilder.UseSqlite(builder.ToString());
             var ctx = new NadekoContext(optionsBuilder.Options);
@@ -34,12 +36,10 @@ namespace NadekoBot.Core.Services.Database
         public DbSet<MusicPlaylist> MusicPlaylists { get; set; }
         public DbSet<CustomReaction> CustomReactions { get; set; }
         public DbSet<CurrencyTransaction> CurrencyTransactions { get; set; }
-        public DbSet<UserPokeTypes> PokeGame { get; set; }
         public DbSet<WaifuUpdate> WaifuUpdates { get; set; }
         public DbSet<Warning> Warnings { get; set; }
         public DbSet<UserXpStats> UserXpStats { get; set; }
         public DbSet<ClubInfo> Clubs { get; set; }
-        public DbSet<LoadedPackage> LoadedPackages { get; set; }
 
         //logging
         public DbSet<LogSetting> LogSettings { get; set; }
@@ -51,6 +51,7 @@ namespace NadekoBot.Core.Services.Database
         public DbSet<RaceAnimal> RaceAnimals { get; set; }
         public DbSet<RewardedUser> RewardedUsers { get; set; }
         public DbSet<Stake> Stakes { get; set; }
+        public DbSet<PlantedCurrency> PlantedCurrency { get; set; }
 
         public NadekoContext(DbContextOptions<NadekoContext> options) : base(options)
         {
@@ -123,9 +124,6 @@ namespace NadekoBot.Core.Services.Database
                 .HasIndex(c => c.GuildId)
                 .IsUnique();
 
-            //configEntity.Property(x => x.PermissionRole)
-            //    .HasDefaultValue(null);
-
             modelBuilder.Entity<AntiSpamSetting>()
                 .HasOne(x => x.GuildConfig)
                 .WithOne(x => x.AntiSpamSetting);
@@ -137,8 +135,12 @@ namespace NadekoBot.Core.Services.Database
             modelBuilder.Entity<FeedSub>()
                 .HasAlternateKey(x => new { x.GuildConfigId, x.Url });
 
-            //modelBuilder.Entity<ProtectionIgnoredChannel>()
-            //    .HasAlternateKey(c => new { c.ChannelId, c.ProtectionType });
+            modelBuilder.Entity<PlantedCurrency>()
+                .HasIndex(x => x.MessageId)
+                .IsUnique();
+
+            modelBuilder.Entity<PlantedCurrency>()
+                .HasIndex(x => x.ChannelId);
 
             #endregion
 
@@ -172,14 +174,6 @@ namespace NadekoBot.Core.Services.Database
             botConfigEntity.Property(x => x.LastUpdate)
                 .HasDefaultValue(new DateTime(2018, 5, 5, 0, 0, 0, 0, DateTimeKind.Utc));
 
-            //botConfigEntity.Property(x => x.PermissionVersion)
-            //    .HasDefaultValue(2);
-
-            //botConfigEntity
-            //    .HasMany(c => c.ModulePrefixes)
-            //    .WithOne(mp => mp.BotConfig)
-            //    .HasForeignKey(mp => mp.BotConfigId);
-
             #endregion
 
             #region Self Assignable Roles
@@ -204,20 +198,6 @@ namespace NadekoBot.Core.Services.Database
                 .IsRequired(false);
             #endregion
 
-            #region LogSettings
-
-            //var logSettingEntity = modelBuilder.Entity<LogSetting>();
-
-            //logSettingEntity
-            //    .HasMany(ls => ls.IgnoredChannels)
-            //    .WithOne(ls => ls.LogSetting)
-            //    .HasPrincipalKey(ls => ls.id;
-
-            //logSettingEntity
-            //    .HasMany(ls => ls.IgnoredVoicePresenceChannelIds)
-            //    .WithOne(ls => ls.LogSetting);
-            #endregion
-
             #region MusicPlaylists
             var musicPlaylistEntity = modelBuilder.Entity<MusicPlaylist>();
 
@@ -229,27 +209,6 @@ namespace NadekoBot.Core.Services.Database
 
             #endregion
 
-            #region PokeGame
-            var pokeGameEntity = modelBuilder.Entity<UserPokeTypes>();
-
-            pokeGameEntity
-                .HasIndex(pt => pt.UserId)
-                .IsUnique();
-
-
-            #endregion
-
-            #region CommandPrice
-            //well, i failed
-            modelBuilder.Entity<CommandPrice>()
-                .HasIndex(cp => cp.Price)
-                .IsUnique();
-
-            //modelBuilder.Entity<CommandCost>()
-            //    .HasIndex(cp => cp.CommandName)
-            //    .IsUnique();
-            #endregion
-
             #region Waifus
 
             var wi = modelBuilder.Entity<WaifuInfo>();
@@ -258,13 +217,8 @@ namespace NadekoBot.Core.Services.Database
 
             wi.HasIndex(x => x.Price);
             wi.HasIndex(x => x.ClaimerId);
-            //    //.HasForeignKey<WaifuInfo>(w => w.WaifuId)
-            //    //.IsRequired(true);
 
-            //wi.HasOne(x => x.Claimer)
-            //    .WithOne();
-            //    //.HasForeignKey<WaifuInfo>(w => w.ClaimerId)
-            //    //.IsRequired(false);
+            var wu = modelBuilder.Entity<WaifuUpdate>();
             #endregion
 
             #region DiscordUser
@@ -377,6 +331,17 @@ namespace NadekoBot.Core.Services.Database
             #region Reminders
             modelBuilder.Entity<Reminder>()
                 .HasIndex(x => x.DateAdded);
+            #endregion
+
+            #region  GroupName
+            modelBuilder.Entity<GroupName>()
+                .HasIndex(x => new { x.GuildConfigId, x.Number })
+                .IsUnique();
+
+            modelBuilder.Entity<GroupName>()
+                .HasOne(x => x.GuildConfig)
+                .WithMany(x => x.SelfAssignableRoleGroupNames)
+                .IsRequired();
             #endregion
         }
     }

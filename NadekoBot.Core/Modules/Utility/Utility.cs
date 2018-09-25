@@ -1,19 +1,19 @@
 using Discord;
 using Discord.Commands;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Text;
-using NadekoBot.Extensions;
-using NadekoBot.Core.Services.Impl;
-using System.Net.Http;
-using System.Collections.Generic;
-using Newtonsoft.Json;
 using Discord.WebSocket;
-using System.Diagnostics;
 using NadekoBot.Common;
 using NadekoBot.Common.Attributes;
 using NadekoBot.Core.Services;
+using NadekoBot.Core.Services.Impl;
+using NadekoBot.Extensions;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace NadekoBot.Modules.Utility
 {
@@ -24,25 +24,27 @@ namespace NadekoBot.Modules.Utility
         private readonly IBotCredentials _creds;
         private readonly NadekoBot _bot;
         private readonly DbService _db;
+        private readonly IHttpClientFactory _httpFactory;
 
-        public Utility(NadekoBot nadeko, DiscordSocketClient client, 
+        public Utility(NadekoBot nadeko, DiscordSocketClient client,
             IStatsService stats, IBotCredentials creds,
-            DbService db)
+            DbService db, IHttpClientFactory factory)
         {
             _client = client;
             _stats = stats;
             _creds = creds;
             _bot = nadeko;
-            _db = db;            
+            _db = db;
+            _httpFactory = factory;
         }
 
         [NadekoCommand, Usage, Description, Aliases]
         public async Task TogetherTube()
         {
             Uri target;
-            using (var http = new HttpClient())
+            using (var http = _httpFactory.CreateClient())
+            using (var res = await http.GetAsync("https://togethertube.com/room/create").ConfigureAwait(false))
             {
-                var res = await http.GetAsync("https://togethertube.com/room/create").ConfigureAwait(false);
                 target = res.RequestMessage.RequestUri;
             }
 
@@ -50,7 +52,7 @@ namespace NadekoBot.Modules.Utility
                 .WithAuthor(eab => eab.WithIconUrl("https://togethertube.com/assets/img/favicons/favicon-32x32.png")
                 .WithName("Together Tube")
                 .WithUrl("https://togethertube.com/"))
-                .WithDescription(Context.User.Mention + " " + GetText("togtub_room_link") +  "\n" + target)).ConfigureAwait(false);
+                .WithDescription(Context.User.Mention + " " + GetText("togtub_room_link") + "\n" + target)).ConfigureAwait(false);
         }
 
         [NadekoCommand, Usage, Description, Aliases]
@@ -61,8 +63,7 @@ namespace NadekoBot.Modules.Utility
             if (string.IsNullOrWhiteSpace(game))
                 return;
 
-            var socketGuild = Context.Guild as SocketGuild;
-            if (socketGuild == null)
+            if (!(Context.Guild is SocketGuild socketGuild))
             {
                 _log.Warn("Can't cast guild to socket guild.");
                 return;
@@ -176,8 +177,8 @@ namespace NadekoBot.Modules.Utility
                 }
                 else
                 {
-                    
-                    await channel.SendConfirmAsync(GetText("roles_page", page, Format.Bold(target.ToString())), 
+
+                    await channel.SendConfirmAsync(GetText("roles_page", page, Format.Bold(target.ToString())),
                         "\n• " + string.Join("\n• ", (IEnumerable<IRole>)roles).SanitizeMentions()).ConfigureAwait(false);
                 }
             }
@@ -216,17 +217,6 @@ namespace NadekoBot.Modules.Utility
         }
 
         [NadekoCommand, Usage, Description, Aliases]
-        [RequireContext(ContextType.Guild)]
-        [RequireBotPermission(ChannelPermission.CreateInstantInvite)]
-        [RequireUserPermission(ChannelPermission.CreateInstantInvite)]
-        public async Task CreateInvite()
-        {
-            var invite = await ((ITextChannel)Context.Channel).CreateInviteAsync(0, null, isUnique: true).ConfigureAwait(false);
-
-            await Context.Channel.SendConfirmAsync($"{Context.User.Mention} https://discord.gg/{invite.Code}").ConfigureAwait(false);
-        }
-
-        [NadekoCommand, Usage, Description, Aliases]
         public async Task Stats()
         {
             var ownerIds = string.Join("\n", _creds.OwnerIds);
@@ -261,7 +251,7 @@ namespace NadekoBot.Modules.Utility
             if (string.IsNullOrWhiteSpace(result))
                 await ReplyErrorLocalized("showemojis_none").ConfigureAwait(false);
             else
-                await Context.Channel.SendMessageAsync(result).ConfigureAwait(false);
+                await Context.Channel.SendMessageAsync(result.TrimTo(2000)).ConfigureAwait(false);
         }
 
         [NadekoCommand, Usage, Description, Aliases]
@@ -284,7 +274,7 @@ namespace NadekoBot.Modules.Utility
             await Context.Channel.EmbedAsync(guilds.Aggregate(new EmbedBuilder().WithOkColor(),
                                      (embed, g) => embed.AddField(efb => efb.WithName(g.Name)
                                                                            .WithValue(
-                                             GetText("listservers", g.Id, g.Users.Count,
+                                             GetText("listservers", g.Id, g.MemberCount,
                                                  g.OwnerId))
                                                                            .WithIsInline(false))))
                          .ConfigureAwait(false);
@@ -325,8 +315,10 @@ namespace NadekoBot.Modules.Utility
                         return msg;
                     })
                 });
-            await Context.User.SendFileAsync(
-                await JsonConvert.SerializeObject(grouping, Formatting.Indented).ToStream().ConfigureAwait(false), title, title, false).ConfigureAwait(false);
+            using (var stream = await JsonConvert.SerializeObject(grouping, Formatting.Indented).ToStream().ConfigureAwait(false))
+            {
+                await Context.User.SendFileAsync(stream, title, title, false).ConfigureAwait(false);
+            }
         }
         [NadekoCommand, Usage, Description, Aliases]
         public async Task Ping()

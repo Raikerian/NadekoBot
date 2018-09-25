@@ -3,6 +3,7 @@ using NadekoBot.Core.Services;
 using NadekoBot.Extensions;
 using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace NadekoBot.Core.Common.Attributes
 {
@@ -14,7 +15,7 @@ namespace NadekoBot.Core.Common.Attributes
 
         public RatelimitAttribute(int seconds)
         {
-            if (seconds < 0)
+            if (seconds <= 0)
                 throw new ArgumentOutOfRangeException(nameof(seconds));
 
             Seconds = seconds;
@@ -25,14 +26,13 @@ namespace NadekoBot.Core.Common.Attributes
             if (Seconds == 0)
                 return Task.FromResult(PreconditionResult.FromSuccess());
 
-            var cache = (IDataCache)services.GetService(typeof(IDataCache));
+            var cache = services.GetService<IDataCache>();
             var rem = cache.TryAddRatelimit(context.User.Id, command.Name, Seconds);
 
             if(rem == null)
                 return Task.FromResult(PreconditionResult.FromSuccess());
 
             var msgContent = $"You can use this command again in {rem.Value.TotalSeconds:F2} seconds.";
-            var _ = Task.Run(() => context.Channel.SendErrorAsync(msgContent));
 
             return Task.FromResult(PreconditionResult.FromError(msgContent));
         }

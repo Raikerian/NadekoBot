@@ -174,9 +174,9 @@ namespace NadekoBot.Modules.Administration.Services
                         try
                         {
                             if (muteTime <= 0)
-                                await _mute.MuteUser(gu).ConfigureAwait(false);
+                                await _mute.MuteUser(gu, _client.CurrentUser).ConfigureAwait(false);
                             else
-                                await _mute.TimedMute(gu, TimeSpan.FromSeconds(muteTime)).ConfigureAwait(false);
+                                await _mute.TimedMute(gu, _client.CurrentUser, TimeSpan.FromSeconds(muteTime)).ConfigureAwait(false);
                         }
                         catch (Exception ex) { _log.Warn(ex, "I can't apply punishement"); }
                         break;
@@ -218,7 +218,7 @@ namespace NadekoBot.Modules.Administration.Services
             }
             await OnAntiProtectionTriggered(action, pt, gus).ConfigureAwait(false);
         }
-        
+
         public async Task<AntiRaidStats> StartAntiRaidAsync(ulong guildId, int userThreshold, int seconds, PunishmentAction action)
         {
 
@@ -242,7 +242,7 @@ namespace NadekoBot.Modules.Administration.Services
                 var gc = uow.GuildConfigs.ForId(guildId, set => set.Include(x => x.AntiRaidSetting));
 
                 gc.AntiRaidSetting = stats.AntiRaidSettings;
-                await uow.CompleteAsync().ConfigureAwait(false);
+                await uow.CompleteAsync();
             }
 
             return stats;
@@ -317,7 +317,7 @@ namespace NadekoBot.Modules.Administration.Services
                 {
                     gc.AntiSpamSetting = stats.AntiSpamSettings;
                 }
-                await uow.CompleteAsync().ConfigureAwait(false);
+                await uow.CompleteAsync();
             }
             return stats;
         }
@@ -348,11 +348,13 @@ namespace NadekoBot.Modules.Administration.Services
                 {
                     spam.IgnoredChannels.Remove(obj);
                     if (_antiSpamGuilds.TryGetValue(guildId, out var temp))
-                        temp.AntiSpamSettings.IgnoredChannels.Remove(obj);
+                    {
+                        uow._context.Set<AntiSpamIgnore>().Remove(obj);
+                    }
                     added = false;
                 }
 
-                await uow.CompleteAsync().ConfigureAwait(false);
+                await uow.CompleteAsync();
             }
             return added;
         }

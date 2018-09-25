@@ -15,6 +15,11 @@ namespace NadekoBot.Core.Services.Impl
 
         public async Task<string> GetDataAsync(string url, bool tryForBestAudio)
         {
+            // escape the minus on the video argument
+            // to prevent youtube-dl to handle it like an argument
+            if (url != null && url.StartsWith("-"))
+                url = '\\' + url;
+
             var arguments = $"--geo-bypass";
             if (tryForBestAudio)
             {
@@ -35,6 +40,8 @@ namespace NadekoBot.Core.Services.Impl
                 },
             })
             {
+                _log.Debug($"Executing {process.StartInfo.FileName} {process.StartInfo.Arguments}");
+
                 process.Start();
                 var str = await process.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
                 var err = await process.StandardError.ReadToEndAsync().ConfigureAwait(false);

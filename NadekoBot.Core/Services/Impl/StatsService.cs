@@ -1,6 +1,8 @@
-﻿using Discord;
+using Discord;
 using Discord.WebSocket;
 using NadekoBot.Extensions;
+using NLog;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -11,8 +13,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using StackExchange.Redis;
-using NLog;
 
 namespace NadekoBot.Core.Services.Impl
 {
@@ -44,14 +44,16 @@ namespace NadekoBot.Core.Services.Impl
         // private readonly Timer _botlistTimer;
         // private readonly Timer _dataTimer;
         private readonly ConnectionMultiplexer _redis;
+        private readonly IHttpClientFactory _httpFactory;
 
         public StatsService(DiscordSocketClient client, CommandHandler cmdHandler,
-            IBotCredentials creds, NadekoBot nadeko, IDataCache cache)
+            IBotCredentials creds, NadekoBot nadeko, IDataCache cache, IHttpClientFactory factory)
         {
             _log = LogManager.GetCurrentClassLogger();
             _client = client;
             _creds = creds;
             _redis = cache.Redis;
+            _httpFactory = factory;
 
             _started = DateTime.UtcNow;
             _client.MessageReceived += _ => Task.FromResult(Interlocked.Increment(ref _messageCounter));

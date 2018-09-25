@@ -84,23 +84,26 @@ namespace NadekoBot.Modules.Utility
                 }
 
                 var repeater = repeaterList[index];
-                rep.TryRemove(repeater.Value.Repeater.Id, out _);
+                if (rep.TryRemove(repeater.Value.Repeater.Id, out var runner))
+                    runner.Stop();
 
                 using (var uow = _db.UnitOfWork)
                 {
                     var guildConfig = uow.GuildConfigs.ForId(Context.Guild.Id, set => set.Include(gc => gc.GuildRepeaters));
 
-                    guildConfig.GuildRepeaters.RemoveWhere(r => r.Id == repeater.Value.Repeater.Id);
-                    await uow.CompleteAsync().ConfigureAwait(false);
+                    var item = guildConfig.GuildRepeaters.FirstOrDefault(r => r.Id == repeater.Value.Repeater.Id);
+                    if (item != null)
+                        guildConfig.GuildRepeaters.Remove(item);
+                    await uow.CompleteAsync();
                 }
                 await Context.Channel.SendConfirmAsync(GetText("message_repeater"),
-                    GetText("repeater_stopped", index + 1) + $"\n\n{repeater}").ConfigureAwait(false);
+                    GetText("repeater_stopped", index + 1) + $"\n\n{repeater.Value}").ConfigureAwait(false);
             }
 
             [NadekoCommand, Usage, Description, Aliases]
             [RequireContext(ContextType.Guild)]
             [RequireUserPermission(GuildPermission.ManageMessages)]
-            [NadekoOptionsAttribute(typeof(Repeater.Options))]
+            [NadekoOptions(typeof(Repeater.Options))]
             [Priority(0)]
             public Task Repeat(params string[] options)
                 => Repeat(null, options);
@@ -108,7 +111,7 @@ namespace NadekoBot.Modules.Utility
             [NadekoCommand, Usage, Description, Aliases]
             [RequireContext(ContextType.Guild)]
             [RequireUserPermission(GuildPermission.ManageMessages)]
-            [NadekoOptionsAttribute(typeof(Repeater.Options))]
+            [NadekoOptions(typeof(Repeater.Options))]
             [Priority(1)]
             public async Task Repeat(GuildDateTime dt, params string[] options)
             {
@@ -138,12 +141,12 @@ namespace NadekoBot.Modules.Utility
                         return;
                     gc.GuildRepeaters.Add(toAdd);
 
-                    await uow.CompleteAsync().ConfigureAwait(false);
+                    await uow.CompleteAsync();
                 }
 
                 var rep = new RepeatRunner((SocketGuild)Context.Guild, toAdd, _service);
 
-                _service.Repeaters.AddOrUpdate(Context.Guild.Id, 
+                _service.Repeaters.AddOrUpdate(Context.Guild.Id,
                     new ConcurrentDictionary<int, RepeatRunner>(new[] { new KeyValuePair<int, RepeatRunner>(toAdd.Id, rep) }), (key, old) =>
                   {
                       old.TryAdd(rep.Repeater.Id, rep);
@@ -186,7 +189,7 @@ namespace NadekoBot.Modules.Utility
                 {
                     var rep = replist[i];
 
-                    sb.AppendLine($"`{i + 1}.` {rep}");
+                    sb.AppendLine($"`{i + 1}.` {rep.Value}");
                 }
                 var desc = sb.ToString();
 

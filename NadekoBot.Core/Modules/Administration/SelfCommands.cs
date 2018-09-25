@@ -1,7 +1,5 @@
 using System;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -10,7 +8,6 @@ using Discord.WebSocket;
 using NadekoBot.Common;
 using NadekoBot.Common.Attributes;
 using NadekoBot.Common.Replacements;
-using NadekoBot.Core.Services;
 using NadekoBot.Core.Services.Database.Models;
 using NadekoBot.Extensions;
 using NadekoBot.Modules.Administration.Services;
@@ -24,16 +21,11 @@ namespace NadekoBot.Modules.Administration
         {
             private readonly DiscordSocketClient _client;
             private readonly NadekoBot _bot;
-            private readonly IBotCredentials _creds;
-            private readonly IDataCache _cache;
 
-            public SelfCommands(NadekoBot bot, DiscordSocketClient client,
-                IBotCredentials creds, IDataCache cache)
+            public SelfCommands(DiscordSocketClient client, NadekoBot bot)
             {
                 _client = client;
                 _bot = bot;
-                _creds = creds;
-                _cache = cache;
             }
 
             [NadekoCommand, Usage, Description, Aliases]
@@ -281,21 +273,22 @@ namespace NadekoBot.Modules.Administration
             [OwnerOnly]
             public async Task RestartShard(int shardId)
             {
-                if (shardId < 0 || shardId >= _creds.TotalShards)
+                var success = _service.RestartShard(shardId);
+                if (success)
+                {
+                    await ReplyConfirmLocalized("shard_reconnecting", Format.Bold("#" + shardId)).ConfigureAwait(false);
+                }
+                else
                 {
                     await ReplyErrorLocalized("no_shard_id").ConfigureAwait(false);
-                    return;
                 }
-                _service.RestartShard(shardId);
-                await ReplyConfirmLocalized("shard_reconnecting", Format.Bold("#" + shardId)).ConfigureAwait(false);
             }
 
             [NadekoCommand, Usage, Description, Aliases]
             [OwnerOnly]
             public Task Leave([Remainder] string guildStr)
             {
-                var sub = _cache.Redis.GetSubscriber();
-                return sub.PublishAsync(_creds.RedisKey() + "_leave_guild", guildStr);
+                return _service.LeaveGuild(guildStr);
             }
 
 
@@ -319,15 +312,14 @@ namespace NadekoBot.Modules.Administration
             [OwnerOnly]
             public async Task Restart()
             {
-                var cmd = _creds.RestartCommand;
-                if (cmd == null || string.IsNullOrWhiteSpace(cmd.Cmd))
+                bool success = _service.RestartBot();
+                if (!success)
                 {
                     await ReplyErrorLocalized("restart_fail").ConfigureAwait(false);
                     return;
                 }
 
                 try { await ReplyConfirmLocalized("restarting").ConfigureAwait(false); } catch { }
-                _service.Restart();
             }
 
             [NadekoCommand, Usage, Description, Aliases]
@@ -386,22 +378,12 @@ namespace NadekoBot.Modules.Administration
             [OwnerOnly]
             public async Task SetAvatar([Remainder] string img = null)
             {
-                if (string.IsNullOrWhiteSpace(img))
-                    return;
+                var success = await _service.SetAvatar(img);
 
-                using (var http = new HttpClient())
+                if (success)
                 {
-                    using (var sr = await http.GetStreamAsync(img).ConfigureAwait(false))
-                    {
-                        var imgStream = new MemoryStream();
-                        await sr.CopyToAsync(imgStream).ConfigureAwait(false);
-                        imgStream.Position = 0;
-
-                        await _client.CurrentUser.ModifyAsync(u => u.Avatar = new Image(imgStream)).ConfigureAwait(false);
-                    }
+                    await ReplyConfirmLocalized("set_avatar").ConfigureAwait(false);
                 }
-
-                await ReplyConfirmLocalized("set_avatar").ConfigureAwait(false);
             }
 
             [NadekoCommand, Usage, Description, Aliases]
@@ -500,7 +482,7 @@ namespace NadekoBot.Modules.Administration
             public async Task ImagesReload()
             {
                 _service.ReloadImages();
-                await ReplyConfirmLocalized("images_loaded", 0).ConfigureAwait(false);
+                await ReplyConfirmLocalized("images_loading", 0).ConfigureAwait(false);
             }
 
             [NadekoCommand, Usage, Description, Aliases]

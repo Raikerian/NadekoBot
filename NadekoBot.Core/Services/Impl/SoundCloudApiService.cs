@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Net.Http;
@@ -9,10 +9,12 @@ namespace NadekoBot.Core.Services.Impl
     public class SoundCloudApiService : INService
     {
         private readonly IBotCredentials _creds;
+        private readonly IHttpClientFactory _httpFactory;
 
-        public SoundCloudApiService(IBotCredentials creds)
+        public SoundCloudApiService(IBotCredentials creds, IHttpClientFactory factory)
         {
             _creds = creds;
+            _httpFactory = factory;
         }
 
         public async Task<SoundCloudVideo> ResolveVideoAsync(string url)
@@ -22,7 +24,7 @@ namespace NadekoBot.Core.Services.Impl
 
             string response = "";
 
-            using (var http = new HttpClient())
+            using (var http = _httpFactory.CreateClient())
             {
                 // http://api.soundcloud.com/resolve.json?url=/tracks&client_id=
                 response = await http.GetStringAsync($"https://scapi.nadekobot.me/resolve?url={url}").ConfigureAwait(false);
@@ -45,7 +47,7 @@ namespace NadekoBot.Core.Services.Impl
                 throw new ArgumentNullException(nameof(query));
 
             var response = "";
-            using (var http = new HttpClient())
+            using (var http = _httpFactory.CreateClient())
             {
                 // http://api.soundcloud.com/tracks?q=&client_id=
                 response = await http.GetStringAsync(new Uri($"https://scapi.nadekobot.me/tracks?q={Uri.EscapeDataString(query)}")).ConfigureAwait(false);
@@ -78,7 +80,8 @@ namespace NadekoBot.Core.Services.Impl
             using (var http = new HttpClient())
             {
                 // https://api.soundcloud.com/tracks/{Id}/stream?client_id=
-                return await http.GetStringAsync(new Uri($"http://scapi.nadekobot.me/stream/{Id}")).ConfigureAwait(false);
+                var url = await http.GetStringAsync(new Uri($"http://scapi.nadekobot.me/stream/{Id}"));
+                return url;
             }
         }
     }

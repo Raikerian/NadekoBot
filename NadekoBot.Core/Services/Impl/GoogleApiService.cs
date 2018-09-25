@@ -1,18 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Google.Apis.YouTube.v3;
+﻿using Google;
+using Google.Apis.Customsearch.v1;
 using Google.Apis.Services;
-using System.Text.RegularExpressions;
 using Google.Apis.Urlshortener.v1;
 using Google.Apis.Urlshortener.v1.Data;
-using NLog;
-using Google.Apis.Customsearch.v1;
-using System.Net.Http;
-using System.Net;
-using Newtonsoft.Json.Linq;
+using Google.Apis.YouTube.v3;
+using NadekoBot.Common;
 using NadekoBot.Extensions;
+using Newtonsoft.Json.Linq;
+using NLog;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace NadekoBot.Core.Services.Impl
 {
@@ -26,9 +28,10 @@ namespace NadekoBot.Core.Services.Impl
 
         private Logger _log { get; }
 
-        public GoogleApiService(IBotCredentials creds)
+        public GoogleApiService(IBotCredentials creds, IHttpClientFactory factory)
         {
             _creds = creds;
+            _httpFactory = factory;
 
             var bcs = new BaseClientService.Initializer
             {
@@ -67,6 +70,7 @@ namespace NadekoBot.Core.Services.Impl
 
         //private readonly Regex YtVideoIdRegex = new Regex(@"(?:youtube\.com\/\S*(?:(?:\/e(?:mbed))?\/|watch\?(?:\S*?&?v\=))|youtu\.be\/)(?<id>[a-zA-Z0-9_-]{6,11})", RegexOptions.Compiled);
         private readonly IBotCredentials _creds;
+        private readonly IHttpClientFactory _httpFactory;
 
         public async Task<IEnumerable<string>> GetRelatedVideosAsync(string id, int count = 1)
         {
@@ -130,6 +134,10 @@ namespace NadekoBot.Core.Services.Impl
             {
                 var response = await sh.Url.Insert(new Url { LongUrl = url }).ExecuteAsync().ConfigureAwait(false);
                 return response.Id;
+            }
+            catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.Forbidden)
+            {
+                return url;
             }
             catch (Exception ex)
             {
@@ -202,7 +210,7 @@ namespace NadekoBot.Core.Services.Impl
             return toReturn;
         }
 
-        public async Task<ImageResult> GetImageAsync(string query, int start = 1)
+        public async Task<ImageResult> GetImageAsync(string query)
         {
             await Task.Yield();
             if (string.IsNullOrWhiteSpace(query))
@@ -213,7 +221,7 @@ namespace NadekoBot.Core.Services.Impl
             req.Num = 1;
             req.Fields = "items(image(contextLink,thumbnailLink),link)";
             req.SearchType = CseResource.ListRequest.SearchTypeEnum.Image;
-            req.Start = start;
+            req.Start = new NadekoRandom().Next(0, 20);
 
             var search = await req.ExecuteAsync().ConfigureAwait(false);
 
@@ -368,7 +376,7 @@ namespace NadekoBot.Core.Services.Impl
                                         ConvertToLanguageCode(sourceLanguage),
                                         ConvertToLanguageCode(targetLanguage),
                                        WebUtility.UrlEncode(sourceText)));
-            using (var http = new HttpClient())
+            using (var http = _httpFactory.CreateClient())
             {
                 http.DefaultRequestHeaders.Add("user-agent", "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36");
                 text = await http.GetStringAsync(url).ConfigureAwait(false);

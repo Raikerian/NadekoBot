@@ -22,7 +22,7 @@ using Newtonsoft.Json.Linq;
 
 namespace NadekoBot.Modules.Music
 {
-    [NoPublicBotAttribute]
+    [NoPublicBot]
     public class Music : NadekoTopLevelModule<MusicService>
     {
         private readonly DiscordSocketClient _client;
@@ -261,7 +261,8 @@ namespace NadekoBot.Modules.Music
                 total.Minutes,
                 total.Seconds);
             var maxPlaytime = mp.MaxPlaytimeSeconds;
-            Func<int, EmbedBuilder> printAction = curPage =>
+
+            EmbedBuilder printAction(int curPage)
             {
                 var startAt = itemsPerPage * curPage;
                 var number = 0 + startAt;
@@ -310,7 +311,8 @@ namespace NadekoBot.Modules.Music
                     .WithOkColor();
 
                 return embed;
-            };
+            }
+
             await Context.SendPaginatedConfirmAsync(page, printAction, songs.Length,
                 itemsPerPage, false).ConfigureAwait(false);
         }
@@ -472,7 +474,7 @@ namespace NadekoBot.Modules.Music
                         if (_creds.IsOwner(Context.User) || pl.AuthorId == Context.User.Id)
                         {
                             uow.MusicPlaylists.Remove(pl);
-                            await uow.CompleteAsync().ConfigureAwait(false);
+                            await uow.CompleteAsync();
                             success = true;
                         }
                     }
@@ -542,7 +544,7 @@ namespace NadekoBot.Modules.Music
                     Songs = songs.ToList(),
                 };
                 uow.MusicPlaylists.Add(playlist);
-                await uow.CompleteAsync().ConfigureAwait(false);
+                await uow.CompleteAsync();
             }
 
             await Context.Channel.EmbedAsync(new EmbedBuilder().WithOkColor()
@@ -718,7 +720,16 @@ namespace NadekoBot.Modules.Music
 
             var mp = await _service.GetOrCreatePlayer(Context).ConfigureAwait(false);
 
-            var plId = (await _google.GetPlaylistIdsByKeywordsAsync(playlist).ConfigureAwait(false)).FirstOrDefault();
+            string plId = null;
+            try
+            {
+                plId = (await _google.GetPlaylistIdsByKeywordsAsync(playlist).ConfigureAwait(false)).FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                _log.Warn(ex.Message);
+            }
+
             if (plId == null)
             {
                 await ReplyErrorLocalized("no_search_results").ConfigureAwait(false);
